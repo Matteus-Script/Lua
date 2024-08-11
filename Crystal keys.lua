@@ -52,7 +52,8 @@ end
 
 local function clickSeedAndTeleport()
     -- Click the teleport seed interface
-    API.DoAction_Interface(0x2e, 0x9b68, 1, 1430, 64, -1, API.OFF_ACT_GeneralInterface_route)
+    API.DoAction_Ability("Attuned crystal teleport seed", 1, API.OFF_ACT_GeneralInterface_route)
+    --API.DoAction_Interface(0x2e, 0x9b68, 1, 1430, 64, -1, API.OFF_ACT_GeneralInterface_route)
     API.RandomSleep2(500, 700, 500)
 
     -- Define the seed interface with the correct values
