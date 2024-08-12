@@ -167,10 +167,14 @@ while API.Read_LoopyLoop() do
         if shinyOre and (not lastClickedOre or API.Math_DistanceF(lastClickedOre.Tile_XYZ, shinyOre.Tile_XYZ) > 0) then
             API.RandomSleep2(500, 1000, 1500)
             API.DoAction_Object_Direct(0x3a, API.OFF_ACT_GeneralObject_route0, shinyOre)
+            API.WaitUntilMovingEnds()
+            API.RandomSleep2(2000, 2000, 4000)
             lastClickedOre = shinyOre
         else
             if not API.CheckAnim(25) then
                 API.DoAction_Object1(0x3a, API.OFF_ACT_GeneralObject_route0, selectedOres, 50)
+                API.WaitUntilMovingEnds()
+                API.RandomSleep2(2000, 2000, 4000)
             end
         end
 
