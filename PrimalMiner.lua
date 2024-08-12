@@ -46,7 +46,6 @@ API.SetMaxIdleTime(MAX_IDLE_TIME_MINUTES)
 
 local IDS = {
     ELVEN_SHARD = 43358,
-    PERFECT_JUJUS = {33234, 33232, 33230, 33228, 33226, 33224}
 }
 
 -- Utility functions
@@ -102,15 +101,6 @@ local function keepGOTEcharged()
         API.RandomSleep2(600, 600, 600)
     end
 end
-
-local function healthCheck()
-    local perfectPlus = API.Buffbar_GetIDstatus(33234, false)
-    if not perfectPlus.found and API.InvItemFound2(IDS.PERFECT_JUJUS[1]) then
-        API.logDebug("Using Perfect Juju")
-        API.DoAction_Inventory2(IDS.PERFECT_JUJUS[1], 0, 1, API.OFF_ACT_GeneralInterface_route)
-    end
-end
-
 local function FindHighlightedRock(objects, maxdistance, highlight)
     local closestRock = nil
     local closestDistance = maxdistance
@@ -152,7 +142,6 @@ while API.Read_LoopyLoop() do
 
     if #selectedRocks > 0 then
         API.DoRandomEvents()
-        healthCheck()
         keepGOTEcharged()
         useElvenRitualShard()
 
