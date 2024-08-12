@@ -7,14 +7,13 @@
 
 -- Release Notes:
 -- Version 1.1  : Cleaned code, enhanced logging, and optimized checks.
--- Version 1.2  : Fixed Gote
+-- Version 1.2  : Fixed Gote and perfect plus
 --]]
 
--- Import necessary modules
 local API = require("api")
 local GUI = require("gui")
 
--- GUI Initialization with specified order and an "Idle" option
+
 local ROCK_OPTIONS = {
     "Idle", "Novite", "Bathus", "Marmaros", "Kratonium",
     "Fractite", "Zephyrium", "Argonite", "Katagon", 
@@ -34,9 +33,11 @@ local ROCK_IDS = {
     Promethium = {130824, 130825, 130826}
 }
 
+
 GUI.AddBackground("MainBackground", 2, 1, ImColor.new(0, 0, 0, 180))
 GUI.AddLabel("Title", "Primal Ore Miner", ImColor.new(255, 255, 255))
 GUI.AddComboBox("RockSelector", "Select Rock", ROCK_OPTIONS)
+
 
 local MAX_IDLE_TIME_MINUTES = 10
 local HIGHLIGHTS = {7164, 7165}
@@ -45,7 +46,10 @@ API.SetMaxIdleTime(MAX_IDLE_TIME_MINUTES)
 
 local IDS = {
     ELVEN_SHARD = 43358,
+    POTION_BUFF = 33234
 }
+
+local POTION_IDS = {33234, 33232, 33230, 33228, 33226, 33224}
 
 local function hasElvenRitualShard()
     return API.InvItemcount_1(IDS.ELVEN_SHARD) > 0
@@ -103,6 +107,24 @@ local function keepGOTEcharged()
     end
 end
 
+local function checkAndDrinkPotion()
+    
+    local buffStatus = API.Buffbar_GetIDstatus(IDS.POTION_BUFF, false)
+
+    if not buffStatus.found then
+        for _, potionId in ipairs(POTION_IDS) do
+            local potionCount = API.InvItemcount_1(potionId)
+            if potionCount > 0 then
+                API.logDebug("Drinking potion with ID: " .. potionId)
+                API.DoAction_Inventory1(potionId, potionId, 1, API.OFF_ACT_GeneralInterface_route)
+                API.RandomSleep2(500, 1000, 1500)
+                return
+            end
+        end
+        API.logDebug("No potion found in inventory.")
+    end
+end
+
 local function FindHighlightedRock(objects, maxdistance, highlight)
     local closestRock = nil
     local closestDistance = maxdistance
@@ -128,7 +150,7 @@ local function getSelectedRocks()
     return ROCK_IDS[selectedOption] or {}
 end
 
-
+-- Main loop
 local clickedRock = nil
 local selectedRocks = {}
 
@@ -145,6 +167,7 @@ while API.Read_LoopyLoop() do
         API.DoRandomEvents()
         keepGOTEcharged()
         useElvenRitualShard()
+        checkAndDrinkPotion()
 
         local shinyRock = FindHighlightedRock(selectedRocks, 50, HIGHLIGHTS)
         if shinyRock and (not clickedRock or API.Math_DistanceF(clickedRock.Tile_XYZ, shinyRock.Tile_XYZ) > 0) then
