@@ -59,19 +59,10 @@ local function useElvenRitualShard()
     if not hasElvenRitualShard() then return end
     local prayer = API.GetPrayPrecent()
     local elvenCD = API.DeBuffbar_GetIDstatus(IDS.ELVEN_SHARD, false)
-
     if prayer < 50 and not elvenCD.found then
         API.logDebug("Using Elven Shard")
         API.DoAction_Inventory1(IDS.ELVEN_SHARD, IDS.ELVEN_SHARD, 1, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(300, 500, 700)
-        local shinyRock = FindHighlightedRock(selectedRocks, 50, HIGHLIGHTS)
-        if shinyRock and (not clickedRock or API.Math_DistanceF(clickedRock.Tile_XYZ, shinyRock.Tile_XYZ) > 0) then
-            API.RandomSleep2(500, 1000, 1500)
-            API.DoAction_Object_Direct(0x3a, API.OFF_ACT_GeneralObject_route0, shinyRock)
-            clickedRock = shinyRock
-        else
-            API.DoAction_Object1(0x3a, API.OFF_ACT_GeneralObject_route0, selectedRocks, 50)
-        end
+        API.RandomSleep2(600, 600, 600)
     end
 end
 
