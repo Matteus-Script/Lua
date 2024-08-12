@@ -7,7 +7,7 @@
 
 -- Release Notes:
 -- Version 1.1  : Cleaned code, enhanced logging, and optimized checks.
--- Version 1.2  : Fixed Gote and perfect plus
+-- Version 1.2  : Fixed Gote and perfect pl
 --]]
 
 local API = require("api")
@@ -164,10 +164,14 @@ while API.Read_LoopyLoop() do
         if shinyRock and (not clickedRock or API.Math_DistanceF(clickedRock.Tile_XYZ, shinyRock.Tile_XYZ) > 0) then
             API.RandomSleep2(500, 1000, 1500)
             API.DoAction_Object_Direct(0x3a, API.OFF_ACT_GeneralObject_route0, shinyRock)
+            API.WaitUntilMovingEnds()
+            API.RandomSleep2(2000, 2000, 4000)
             clickedRock = shinyRock
         else
             if not API.CheckAnim(25) then
                 API.DoAction_Object1(0x3a, API.OFF_ACT_GeneralObject_route0, selectedRocks, 50)
+                API.WaitUntilMovingEnds()
+                API.RandomSleep2(2000, 2000, 4000)
             end
         end
 
