@@ -2,11 +2,12 @@
 # Script Name:   Primal Ore Miner
 # Description:   Mines ores at Daemonheim; start at the rock you want to mine
 # Author:        Matteus
-# Version:       1.1
+# Version:       1.2
 # Date:          2024.08.12
 
 -- Release Notes:
 -- Version 1.1  : Cleaned code, enhanced logging, and optimized checks.
+-- Version 1.2  : Fixed Gote
 --]]
 
 -- Import necessary modules
@@ -33,12 +34,10 @@ local ROCK_IDS = {
     Promethium = {130824, 130825, 130826}
 }
 
--- Add GUI components
 GUI.AddBackground("MainBackground", 2, 1, ImColor.new(0, 0, 0, 180))
 GUI.AddLabel("Title", "Primal Ore Miner", ImColor.new(255, 255, 255))
 GUI.AddComboBox("RockSelector", "Select Rock", ROCK_OPTIONS)
 
--- Constants
 local MAX_IDLE_TIME_MINUTES = 10
 local HIGHLIGHTS = {7164, 7165}
 API.SetDrawTrackedSkills(true)
@@ -48,7 +47,6 @@ local IDS = {
     ELVEN_SHARD = 43358,
 }
 
--- Utility functions
 local function hasElvenRitualShard()
     return API.InvItemcount_1(IDS.ELVEN_SHARD) > 0
 end
@@ -62,25 +60,19 @@ local function useElvenRitualShard()
         API.logDebug("Using Elven Shard")
         API.DoAction_Inventory1(IDS.ELVEN_SHARD, IDS.ELVEN_SHARD, 1, API.OFF_ACT_GeneralInterface_route)
         API.RandomSleep2(300, 500, 700)
-
-        if not API.CheckAnim(25) then
-            local shinyRock = FindHighlightedRock(selectedRocks, 50, HIGHLIGHTS)
-            if shinyRock then
-                if not clickedRock or API.Math_DistanceF(clickedRock.Tile_XYZ, shinyRock.Tile_XYZ) > 0 then
-                    API.RandomSleep2(500, 1000, 1500)
-                    API.DoAction_Object_Direct(0x3a, API.OFF_ACT_GeneralObject_route0, shinyRock)
-                    clickedRock = shinyRock
-                end
-            else
-                if not API.CheckAnim(25) then
-                    API.DoAction_Object1(0x3a, API.OFF_ACT_GeneralObject_route0, selectedRocks, 50)
-                end
-            end
+        local shinyRock = FindHighlightedRock(selectedRocks, 50, HIGHLIGHTS)
+        if shinyRock and (not clickedRock or API.Math_DistanceF(clickedRock.Tile_XYZ, shinyRock.Tile_XYZ) > 0) then
+            API.RandomSleep2(500, 1000, 1500)
+            API.DoAction_Object_Direct(0x3a, API.OFF_ACT_GeneralObject_route0, shinyRock)
+            clickedRock = shinyRock
+        else
+            API.DoAction_Object1(0x3a, API.OFF_ACT_GeneralObject_route0, selectedRocks, 50)
         end
     end
 end
 
 local function keepGOTEcharged()
+    
     local buffStatus = API.Buffbar_GetIDstatus(51490, false)
     local stacks = tonumber(buffStatus.text) or 0
 
@@ -95,12 +87,22 @@ local function keepGOTEcharged()
         return nil
     end
 
-    if stacks <= 50 and findPorters() then
-        API.logDebug("Recharging GOTE")
-        API.DoAction_Ability("Grace of the Elves", 5, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(600, 600, 600)
+    if stacks <= 50 then
+        local porterId = findPorters()
+        if porterId then
+            API.logDebug("Recharging GOTE - Found porter item in inventory.")
+            
+            local success = API.DoAction_Ability("Grace of the elves", 5, API.OFF_ACT_GeneralInterface_route)
+            if not success then
+                API.logDebug("Failed to activate Grace of the Elves ability.")
+            end
+            API.RandomSleep2(600, 600, 600)
+        else
+            API.logDebug("Recharging GOTE - No porter item found in inventory.")
+        end
     end
 end
+
 local function FindHighlightedRock(objects, maxdistance, highlight)
     local closestRock = nil
     local closestDistance = maxdistance
@@ -126,7 +128,7 @@ local function getSelectedRocks()
     return ROCK_IDS[selectedOption] or {}
 end
 
--- Main loop
+
 local clickedRock = nil
 local selectedRocks = {}
 
@@ -134,8 +136,7 @@ while API.Read_LoopyLoop() do
     GUI.Draw()
 
     local newSelectedRocks = getSelectedRocks()
-    if #newSelectedRocks == 0 and #selectedRocks > 0 then
-        print("Switching to Idle, stopping mining actions.")
+    if #newSelectedRocks == 0 then
         clickedRock = nil
     end
     selectedRocks = newSelectedRocks
@@ -146,12 +147,10 @@ while API.Read_LoopyLoop() do
         useElvenRitualShard()
 
         local shinyRock = FindHighlightedRock(selectedRocks, 50, HIGHLIGHTS)
-        if shinyRock then
-            if not clickedRock or API.Math_DistanceF(clickedRock.Tile_XYZ, shinyRock.Tile_XYZ) > 0 then
-                API.RandomSleep2(500, 1000, 1500)
-                API.DoAction_Object_Direct(0x3a, API.OFF_ACT_GeneralObject_route0, shinyRock)
-                clickedRock = shinyRock
-            end
+        if shinyRock and (not clickedRock or API.Math_DistanceF(clickedRock.Tile_XYZ, shinyRock.Tile_XYZ) > 0) then
+            API.RandomSleep2(500, 1000, 1500)
+            API.DoAction_Object_Direct(0x3a, API.OFF_ACT_GeneralObject_route0, shinyRock)
+            clickedRock = shinyRock
         else
             if not API.CheckAnim(25) then
                 API.DoAction_Object1(0x3a, API.OFF_ACT_GeneralObject_route0, selectedRocks, 50)
