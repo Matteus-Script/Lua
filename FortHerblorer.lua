@@ -25,6 +25,22 @@ local SpecialPotions = {
     {id = 39067, target = 15301}     -- Super Adrenaline Potion
 }
 
+local HERBLORE_IFACE = InterfaceComp5:new(1370, 30, -1, -1, 0)
+
+API.SetDrawTrackedSkills(true)
+
+local function isHerbloreInterfacePresent()
+    local success, result = pcall(function()
+        return API.ScanForInterfaceTest2Get(true, { HERBLORE_IFACE })
+    end)
+    
+    if success then
+        return #result > 0
+    else
+        return false
+    end
+end
+
 local STATES = {
     {
         desc = "Banking",
@@ -33,7 +49,6 @@ local STATES = {
             if success then
                 API.RandomSleep2(350, 175, 350)  
             else
-                print("Failed to interact with the bank chest.")
             end
         end,
         post = function()
@@ -52,26 +67,22 @@ local STATES = {
     {
         desc = "Clicking potions",
         callback = function()
-            print("Attempting to click potions...")
             local clicked = false
             for _, id in ipairs(PotionIDs) do
                 if API.InvItemcount_1(id) > 0 then
                     API.DoAction_Inventory1(id, 0, 1, API.OFF_ACT_GeneralInterface_route)
-                    print("Clicked on potion ID: " .. id)
                     clicked = true
-                    API.RandomSleep2(600, 300, 600)  -- Increased delay for handling regular potions
+                    API.RandomSleep2(600, 300, 600) 
                     break
                 end
             end
             if not clicked then
-                print("No potions available to click.")
             end
         end
     },
     {
         desc = "Mixing Potions",
         callback = function()
-            print("Attempting to mix potions...")
             local mixed = false
             for _, potion in ipairs(SpecialPotions) do
                 local potionID = potion.id
@@ -82,20 +93,23 @@ local STATES = {
                     API.RandomSleep2(50, 30, 50)  -- Slightly increased sleep time for mixing
 
                     API.DoAction_Inventory1(targetID, 0, 0, API.OFF_ACT_GeneralInterface_route1)
-                    API.RandomSleep2(400, 200, 250)  -- Slightly increased sleep time
-                    API.DoAction_Interface(0xffffffff, 0xffffffff, 0, 1370, 30, -1, API.OFF_ACT_GeneralInterface_Choose_option)
+                    API.RandomSleep2(400, 200, 250) 
+
+                    if isHerbloreInterfacePresent() then
+                    API.KeyboardPress32(0x20, 0)  -- Start crafting with spacebar
                     mixed = true
-                    break
+                    else
+                        print("Failed to detect crafting interface.")
+                    end
+                    break    
                 end
             end
             if not mixed then
-                print("No special potions available for mixing.")
             end
         end,
         post = function()
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 0, 1370, 30, -1, API.OFF_ACT_GeneralInterface_Choose_option)
+            API.KeyboardPress32(0x20, 0)  -- Start crafting with spacebar
             local specialDone = #API.ScanForInterfaceTest2Get(true, { InterfaceComp5.new(1473, 7, -1, -1, 0) }) == 0
-            print("Post Mixing Potions Check - SpecialDone: " .. tostring(specialDone))
             return specialDone
         end
     },
@@ -105,7 +119,6 @@ while API.Read_LoopyLoop() do
     API.DoRandomEvents()
     
     if not (API.CheckAnim(50) or API.ReadPlayerMovin2() or API.isProcessing()) then
-        print("Processing State: " .. STATES[state].desc)
         STATES[state].callback()
 
         if STATES[state].post and not STATES[state].post() then
