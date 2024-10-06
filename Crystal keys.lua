@@ -3,7 +3,7 @@
 # Description:   Opens crystal keys in Priff
 # Author:        Matteus
 # Version:       1.1
-# Date:          2024.08.10
+# Date:          2024.08.28
 --]]
 
 local API = require('api')
@@ -23,17 +23,23 @@ local CONFIG = {
 local STATE_IDLE = 1
 local STATE_BANK = 2
 local STATE_TELEPORT = 3
-local STATE_MOVE_TO_CHEST = 4
-local STATE_CLICK_CHEST = 5
-local STATE_WAIT_FOR_KEYS = 6
+local STATE_CLICK_CHEST = 4
+local STATE_WAIT_FOR_KEYS = 5
 
 local currentState = STATE_IDLE
 local startTime, afk = os.time(), nil
 local shouldContinue = true
 local chestClicks = 0
 
-local function randomSleep(minMs, maxMs)
-    API.RandomSleep2(minMs, maxMs, minMs)
+local SeedInterface = { InterfaceComp5.new(720, 2, -1, -1, 0) }
+local ChestInterface = { InterfaceComp5.new(168, 0, -1, -1, 0) }
+
+local function isSeedInterfaceOpen()
+    return #API.ScanForInterfaceTest2Get(true, SeedInterface) > 0
+end
+
+local function isChestInterfaceOpen()
+    return #API.ScanForInterfaceTest2Get(true, ChestInterface) > 0
 end
 
 local function idleCheck()
@@ -55,8 +61,8 @@ local function teleportWarRetreat()
     local warTeleport = API.GetABs_name1("War's Retreat Teleport")
     if warTeleport and warTeleport.enabled then
         API.DoAction_Ability_Direct(warTeleport, 1, API.OFF_ACT_GeneralInterface_route)
-        randomSleep(2000, 3000)
-        API.WaitUntilMovingEnds()
+        API.RandomSleep2(4000,5000,50)
+        API.WaitUntilMovingEnds() 
     else
         print("[Error] War's Retreat Teleport ability not available.")
         shouldContinue = false
@@ -65,27 +71,47 @@ end
 
 local function clickSeedAndTeleport()
     API.DoAction_Ability("Attuned crystal teleport seed", 1, API.OFF_ACT_GeneralInterface_route)
-    randomSleep(500, 700)
-    API.DoAction_Interface(0xFFFFFFFF, 0xFFFFFFFF, 0, 720, 35, -1, API.OFF_ACT_GeneralInterface_Choose_option)
-end
 
-local function moveToChest()
-    if currentState == STATE_MOVE_TO_CHEST then
-        API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {CONFIG.CRYSTAL_CHEST_ID}, 50)
-        randomSleep(1000, 1000)
-        API.WaitUntilMovingEnds()
-        randomSleep(100, 100)
-        API.DoAction_Interface(168, 27, 1, 168, 27, -1, API.OFF_ACT_GeneralInterface_route)
-        currentState = STATE_CLICK_CHEST
+    API.WaitUntilMovingEnds()
+
+    if not isSeedInterfaceOpen() then
+        print("[Error] Seed interface did not open after using teleport seed.")
+        shouldContinue = false
+        return
     end
+    
+    API.DoAction_Interface(0xFFFFFFFF, 0xFFFFFFFF, 0, 720, 35, -1, API.OFF_ACT_GeneralInterface_Choose_option)
+
+    API.RandomSleep2(4000,5000,50)
+
+    
+
+    currentState = STATE_CLICK_CHEST
 end
 
 local function clickCrystalChest()
     if currentState == STATE_CLICK_CHEST then
         API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {CONFIG.CRYSTAL_CHEST_ID}, 50)
-        randomSleep(CONFIG.CHEST_WAIT_TIME, CONFIG.CHEST_WAIT_TIME + 100)
+
+        API.RandomSleep2(1000, 1500, 50)
+
+        local chestInterfaceOpen = false
+        local timeout = 0
+        while not chestInterfaceOpen and timeout < 12 do
+            chestInterfaceOpen = isChestInterfaceOpen()
+            if not chestInterfaceOpen then
+                API.RandomSleep2(1000, 1500, 500)
+                timeout = timeout + 1
+            end
+        end
+
+        if not chestInterfaceOpen then
+            print("[Error] Chest interface did not open after clicking chest.")
+            shouldContinue = false
+            return
+        end
+
         API.DoAction_Interface(168, 27, 1, 168, 27, -1, API.OFF_ACT_GeneralInterface_route)
-        randomSleep(500, 700)
         chestClicks = chestClicks + 1
         currentState = STATE_WAIT_FOR_KEYS
     end
@@ -118,7 +144,7 @@ local function handleStates()
     elseif currentState == STATE_BANK then
         teleportWarRetreat()
         API.DoAction_Object1(0x33, API.OFF_ACT_GeneralObject_route3, {CONFIG.BANK_ID}, 50)
-        randomSleep(CONFIG.BANK_WAIT_TIME, CONFIG.BANK_WAIT_TIME + 500)
+        API.RandomSleep2(CONFIG.BANK_WAIT_TIME, CONFIG.BANK_WAIT_TIME + 500)
 
         if not checkKeysAvailable() then
             print("Fewer than 28 crystal keys remaining after banking. Stopping script.")
@@ -129,11 +155,6 @@ local function handleStates()
         currentState = STATE_TELEPORT
         clickSeedAndTeleport()
     elseif currentState == STATE_TELEPORT then
-        API.WaitUntilMovingEnds()
-        randomSleep(CONFIG.TELEPORT_WAIT_TIME, CONFIG.TELEPORT_WAIT_TIME + 500)
-        currentState = STATE_MOVE_TO_CHEST
-    elseif currentState == STATE_MOVE_TO_CHEST then
-        moveToChest()
     elseif currentState == STATE_CLICK_CHEST then
         clickCrystalChest()
     elseif currentState == STATE_WAIT_FOR_KEYS then
@@ -148,7 +169,7 @@ while API.Read_LoopyLoop() and shouldContinue do
         break
     end
     API.DoRandomEvents()
-    randomSleep(200, 400)
+    API.RandomSleep2(200, 400, 50)
 end
 
 print("Total keys used: " .. chestClicks)
