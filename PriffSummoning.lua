@@ -12,27 +12,24 @@ UTILS = require("utils")
 API.SetDrawTrackedSkills(true)
 API.SetMaxIdleTime(10) 
 
-local obelisk = 94230
-local teleportseed = 39784
-local shouldContinue = true
+local Obelisk = 94230
+local Teleportseed = 39784
+local Bankchest = 92692
+local Shards = 12183
+local Pouches = 12155
+local Charms = { 12158, 12159, 12160, 12163 }
+local ShouldContinue = true
 
 local SeedInterface = { InterfaceComp5.new(720, 2, -1, 0) }
-local obeliskInterface = { InterfaceComp5.new(1371, 7, -1, 0) }
+local ObeliskInterface = { InterfaceComp5.new(1371, 7, -1, 0) }
 
 local function isSeedInterfaceOpen()
     return #API.ScanForInterfaceTest2Get(true, SeedInterface) > 0
 end
 
 local function Summoninginterfaceopen()
-    return #API.ScanForInterfaceTest2Get(true, obeliskInterface) > 0
+    return #API.ScanForInterfaceTest2Get(true, ObeliskInterface) > 0
 end
-
-local MAX_IDLE_TIME_MINUTES = 5
-local BANK_CHEST = 92692
-local OBELISK = 94230
-local Shards = 12183
-local Pouches = 12155
-local Charms = { 12158, 12159, 12160, 12163 }
 
 local states = {
     TELEPORT_AMLODD = 1,
@@ -44,11 +41,11 @@ local states = {
 local currentState = states.BANK
 
 local function TeleportAmlodd()
-    API.DoAction_Inventory1(teleportseed, 0, 1, API.OFF_ACT_GeneralInterface_route)
+    API.DoAction_Inventory1(Teleportseed, 0, 1, API.OFF_ACT_GeneralInterface_route)
     UTILS.countTicks(1)
     if not isSeedInterfaceOpen() then
-        print("[Error] Teleport interface did not open after using teleport seed.")
-        shouldContinue = false
+        print("Teleport interface did not open after using teleport seed.")
+        ShouldContinue = false
         return
     end
     API.KeyboardPress32(0x33, 0)
@@ -57,7 +54,7 @@ local function TeleportAmlodd()
 end
 
 local function Clickobelisk()
-    API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, { obelisk }, 50)
+    API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, { Obelisk }, 50)
     
     local maxWaitTime = 10 
     local elapsedTime = 0
@@ -69,8 +66,8 @@ local function Clickobelisk()
     end
 
     if not Summoninginterfaceopen() then
-        print("[Error] Obelisk interface did not open after clicking obelisk.")
-        shouldContinue = false
+        print("Obelisk interface did not open after clicking obelisk.")
+        ShouldContinue = false
         return
     end
 
@@ -80,11 +77,11 @@ local function Clickobelisk()
 end
 
 local function TeleportIthell()
-    API.DoAction_Inventory1(teleportseed, 0, 1, API.OFF_ACT_GeneralInterface_route)
+    API.DoAction_Inventory1(Teleportseed, 0, 1, API.OFF_ACT_GeneralInterface_route)
     UTILS.countTicks(1)
     if not isSeedInterfaceOpen() then
-        print("[Error] Teleport interface did not open after using teleport seed.")
-        shouldContinue = false
+        print("Teleport interface did not open after using teleport seed.")
+        ShouldContinue = false
         return
     end
     API.KeyboardPress32(0x38, 0)
@@ -102,20 +99,20 @@ local function hasEnoughCharms()
 end
 
 local function Bank()
-    API.DoAction_Object1(0x33, API.OFF_ACT_GeneralObject_route3, { BANK_CHEST }, 10)
+    API.DoAction_Object1(0x33, API.OFF_ACT_GeneralObject_route3, { Bankchest }, 10)
     UTILS.randomSleep(2000 * 2)
     local shardCount = API.InvStackSize(Shards)
     local pouchCount = API.InvStackSize(Pouches)
     if not API.InvFull_() or shardCount < 1000 or pouchCount < 25 or not hasEnoughCharms() then
         print("Not enough supplies left. Stopping script.")
-        shouldContinue = false
+        ShouldContinue = false
         return
     end
     currentState = states.TELEPORT_AMLODD
 end
 
 while (API.Read_LoopyLoop()) do
-    if shouldContinue then
+    if ShouldContinue then
         if currentState == states.TELEPORT_AMLODD then
             TeleportAmlodd()
         elseif currentState == states.CLICK_OBELISK then
