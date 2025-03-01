@@ -2,7 +2,7 @@
 # Script Name:   <Priff Summoning>
 # Description:   <Makes pouches in Priff, start at the bank uses loadlastpreset>
 # Author:        <Matteus>
-# Version:       <1.0>
+# Version:       <1.1>
 # Date:          <2025.01.23>
 --]]
 
@@ -27,8 +27,20 @@ local function isSeedInterfaceOpen()
     return #API.ScanForInterfaceTest2Get(true, SeedInterface) > 0
 end
 
-local function Summoninginterfaceopen()
-    return #API.ScanForInterfaceTest2Get(true, ObeliskInterface) > 0
+local function getSelectedItemId()
+    return API.VB_FindPSettinOrder(1170, 0).state
+end
+
+local function isOpen()
+    return getSelectedItemId() ~= -1 and (API.Compare2874Status(18, false) or API.Compare2874Status(40, false))
+end
+
+local function waitCraftingInterface()
+    for _ = 1, 50 do  
+        if isOpen() then return true end
+        API.RandomSleep2(100, 200, 300) 
+    end
+    return false
 end
 
 local states = {
@@ -55,35 +67,43 @@ end
 
 local function Clickobelisk()
     API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, { Obelisk }, 50)
-    
-    local maxWaitTime = 10 
-    local elapsedTime = 0
-    local waitInterval = 0.5 
 
-    while not Summoninginterfaceopen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
+    if not waitCraftingInterface() then
+        print("Obelisk interface did not open. Retrying.")
 
-    if not Summoninginterfaceopen() then
-        print("Obelisk interface did not open after clicking obelisk.")
-        ShouldContinue = false
-        return
+        API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, { Obelisk }, 50)
+
+        if not waitCraftingInterface() then
+            print("Obelisk interface failed to open again. Stopping script.")
+            ShouldContinue = false
+            return
+        end
     end
 
     API.KeyboardPress32(0x20, 0)
-    UTILS.randomSleep(1000 * 2)
+
+    UTILS.randomSleep(3000) 
+
     currentState = states.TELEPORT_ITHELL
 end
 
 local function TeleportIthell()
+    local item49508Count = API.InvItemcount_1(49508)
+    local item49504Count = API.InvItemcount_1(49504)
+
+    if item49508Count > 0 or item49504Count > 0 then
+        UTILS.countTicks(4)
+    end
+
     API.DoAction_Inventory1(Teleportseed, 0, 1, API.OFF_ACT_GeneralInterface_route)
     UTILS.countTicks(1)
+    
     if not isSeedInterfaceOpen() then
         print("Teleport interface did not open after using teleport seed.")
         ShouldContinue = false
         return
     end
+
     API.KeyboardPress32(0x38, 0)
     UTILS.randomSleep(2000 * 2)
     currentState = states.BANK
