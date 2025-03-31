@@ -6,9 +6,9 @@
 # Date:          <2025.03.24>
 --]]
 
-[[v1.10 - 31-03-2025
+--[[v1.10 - 31-03-2025
     - Added Fletching methods ( Logs>Unstrung>Bows) (logs>shafts>Headless>Arrows). -- note if crafting unstrung or shafts from logs make sure you make 1 first yourself so it remembers last made item 
-]]
+]]--
 
 local API = require("api")
 local UTILS = require("utils")
