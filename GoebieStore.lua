@@ -2,9 +2,13 @@
 # Script Name:   <GoebieStore>
 # Description:   <Makes potions and buys supplies from the Goebie store>
 # Author:        <Matteus>
-# Version:       <1.0>
+# Version:       <1.1>
 # Date:          <2025.03.24>
 --]]
+
+[[v1.10 - 31-03-2025
+    - Added Fletching methods ( Logs>Unstrung>Bows) (logs>shafts>Headless>Arrows). -- note if crafting unstrung or shafts from logs make sure you make 1 first yourself so it remembers last made item 
+]]
 
 local API = require("api")
 local UTILS = require("utils")
@@ -25,7 +29,7 @@ local lastPotionTime = 0
 local lastCycleTime = os.time()
 local bankingStateCalls = 0
 local firstLoop = true
-local trackedSkill = {"HERBLORE", "CRAFTING"}
+local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING" }
 local startXp = {}
 local lastXpTime = os.time()
 
@@ -67,7 +71,23 @@ local function waitCraftingInterface()
     return false
 end
 
+local function shouldBank()
+    local inventoryItems = API.ReadInvArrays33()
+    if not inventoryItems then return true end  -- If inventory can't be read, assume banking is needed.
+
+    for _, item in ipairs(inventoryItems) do
+        if item.textitem and (string.find(item.textitem, "(shaft)") or string.find(item.textitem, "(Headless)")) then
+            print("Found " .. item.textitem .. ", skipping bank reload.")
+            return false
+        end
+    end
+
+    return true  -- If neither is found, banking is needed.
+end
+
 local function banking()
+    if not shouldBank() then return end
+
     API.DoAction_NPC(0x5, API.OFF_ACT_InteractNPC_route, { 21393 }, 50)
     UTILS.countTicks(1)
     if API.BankOpen2 then
@@ -96,6 +116,7 @@ local function banking()
         ShouldContinue = false
     end
 end
+
 
 
 local function banking2()
@@ -229,7 +250,17 @@ local function checkForVialOrUnfItems()
     for i = 1, #inventoryItems do
         local item = inventoryItems[i]
 
-        if item.textitem and (string.find(item.textitem, "Vial") or string.find(item.textitem, "(unf)") or string.find(item.textitem, "(flask)") or string.find(item.textitem, "(Primal)")or string.find(item.textitem, "(Uncut)")or string.find(item.textitem, "(milk)")) then
+        if item.textitem and    (string.find(item.textitem, "(Grimy)") or 
+                                string.find(item.textitem, "Vial") or
+                                 string.find(item.textitem, "(unf)") or 
+                                 string.find(item.textitem, "(flask)") or
+                                 string.find(item.textitem, "(shaft)") or
+                                 string.find(item.textitem, "(Headless)") or
+                                  string.find(item.textitem, "(Primal)")or
+                                   string.find(item.textitem, "(Uncut)")or
+                                   string.find(item.textitem, "(logs)")or
+                                   string.find(item.textitem, "(unstrung)")or
+                                    string.find(item.textitem, "(milk)")) then
             print("Found item: " .. item.textitem .. " (" .. item.itemid1 .. ")")
 
             if not added[item.itemid1] and item.itemid1 > 0 then
