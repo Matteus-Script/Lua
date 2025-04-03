@@ -1,10 +1,14 @@
 --[[
 # Script Name:   <RuneShop Runner>
-# Description:   <Buys Runes from pretty much every runeshop + meat at Ooglog>
+# Description:   <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
 # Author:        <Matteus>
 # Version:       <1.0>
 # Date:          <2025.03.24>
 --]]
+
+--[[v1.10 - 03-04-2025
+    - Added support for Crystalsandstone and Redsandstone make sure you have porter charges and GOTE enabled will add other method in future -turn on Resourceful aura to get more :)
+]]--
 
 local API = require("api")
 local LODESTONES = require("lodestones")       
@@ -30,6 +34,8 @@ local SHOP_STATUS = {
     ZamorakMage = true,
     Magebank = true,
     Ooglog = true,
+    Redsandstone = true, 
+    Crystalsandstone = true,
 }
 
 local function clickRandomTile(baseX, baseY, range)
@@ -76,7 +82,6 @@ local function buyBabaYaga()
         UTILS.randomSleep(1000) 
     end
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 4513 },50)
-    UTILS.randomSleep(1000)
     
         waitUntil(5, 1)
         if not isOpen() then return end
@@ -434,6 +439,65 @@ local function BuyOoglog()
     SHOP_STATUS.Ooglog = false
 end
 
+local function checkCues()
+    local chatTexts = API.GatherEvents_chat_check()
+    for k, v in pairs(chatTexts) do
+        if k > 10 then break end  -- Limit processing to recent messages
+
+        for _, cue in ipairs({"You empty the rock of sandstone."}) do
+            if string.find(v.text, cue) then
+                return true
+            end 
+        end
+    end
+    return false
+end
+
+local function Redsandstone()
+    local IDS_redSandstone = {67969, 67970, 67971, 67972}
+    local redSandstoneDepleted = {67973}
+    LODESTONES.OOGLOG.Teleport()
+    clickRandomTile(2586, 2878, 2)
+    UTILS.countTicks(1)
+    UTILS.surge()
+    clickRandomTile(2586, 2878, 2)
+    UTILS.dive(randomizeDiveCoordinates(2558, 2879, 0, 1))
+    clickRandomTile(2586, 2878, 2)
+    UTILS.countTicks(2)
+    UTILS.surge()
+    clickRandomTile(2586, 2878, 2)
+    
+    API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
+    API.RandomSleep2(600, 600, 600)
+    API.WaitUntilMovingEnds()
+    if UTILS.SleepUntil(checkCues, 150, 'Red Sandstone') then
+    end
+    SHOP_STATUS.Redsandstone = false
+end
+
+local function Crystalsandstone()
+    local IDS_redSandstone = {112696, 112697, 112698, 112699,}
+    local redSandstoneDepleted = {112700}
+    LODESTONES.PRIFDDINAS.Teleport()
+    clickRandomTile(2166, 3361, 1)
+    UTILS.countTicks(3)
+    UTILS.surge()
+    clickRandomTile(2144, 3351, 1)
+    UTILS.countTicks(5)
+    clickRandomTile(2144, 3351, 1)
+    UTILS.dive(randomizeDiveCoordinates(2142, 3361, 0, 1))
+    UTILS.countTicks(1)
+    UTILS.surge()
+    clickRandomTile(2144, 3351, 1)
+
+    API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
+    API.RandomSleep2(600, 600, 600)
+    API.WaitUntilMovingEnds()
+    if UTILS.SleepUntil(checkCues, 150, 'Red Sandstone') then
+    end
+    SHOP_STATUS.Crystalsandstone = false
+end
+
 API.Write_LoopyLoop(true)
 while API.Read_LoopyLoop() do
     API.DoRandomEvents()
@@ -455,6 +519,10 @@ while API.Read_LoopyLoop() do
         BuyMagebank() 
     elseif SHOP_STATUS.Ooglog then
         BuyOoglog() 
+    elseif SHOP_STATUS.Redsandstone then
+        Redsandstone()
+    elseif SHOP_STATUS.Crystalsandstone then
+        Crystalsandstone()
     else        
         print("Finished buying from all supported shops")
         API.Write_LoopyLoop(false)
