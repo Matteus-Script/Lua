@@ -2,7 +2,7 @@
 # Script Name:   <RuneShop Runner>
 # Description:   <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
 # Author:        <Matteus>
-# Version:       <1.0>
+# Version:       <1.10>
 # Date:          <2025.03.24>
 --]]
 
