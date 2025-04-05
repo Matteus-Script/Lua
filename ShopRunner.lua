@@ -2,12 +2,18 @@
 # Script Name:   <RuneShop Runner>
 # Description:   <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
 # Author:        <Matteus>
-# Version:       <1.10>
+# Version:       <1.2>
 # Date:          <2025.03.24>
 --]]
 
---[[v1.10 - 03-04-2025
+--[[
+Changelog:
+v1.0 - 24-03-2025
+    - Initial release
+v1.1 - 03-04-2025
     - Added support for Crystalsandstone and Redsandstone make sure you have porter charges and GOTE enabled will add other method in future -turn on Resourceful aura to get more :)
+v.1.2 - 05-04-2025
+    - Added support for Herblore shops in Taverly, Fort Forinthry and Prifddinas
 ]]--
 
 local API = require("api")
@@ -36,6 +42,9 @@ local SHOP_STATUS = {
     Ooglog = true,
     Redsandstone = true, 
     Crystalsandstone = true,
+    TaverlyHerb = true,
+    FortHerbshop = true,
+    PriffherbShop = true,
 }
 
 local function clickRandomTile(baseX, baseY, range)
@@ -67,6 +76,20 @@ local function waitUntil(maxWaitTime, waitInterval)
         UTILS.randomSleep(waitInterval * 1000)
         elapsedTime = elapsedTime + waitInterval
     end
+end
+
+local function checkCues()
+    local chatTexts = API.GatherEvents_chat_check()
+    for k, v in pairs(chatTexts) do
+        if k > 10 then break end  
+
+        for _, cue in ipairs({"You empty the rock of sandstone."}) do
+            if string.find(v.text, cue) then
+                return true
+            end 
+        end
+    end
+    return false
 end
 
 local function buyBabaYaga() 
@@ -194,7 +217,6 @@ end
 
 local function BuyVoid()
     LODESTONES.PORT_SARIM.Teleport()
-    --clickRandomTile(3026,3205,2)
     Interact:NPC("Squire", "Travel")
     while not API.PInArea(2651, 10, 2673, 10, 0) do
         UTILS.randomSleep(2000) 
@@ -257,7 +279,6 @@ local function BuyAlkharid()
     UTILS.countTicks(5)
     UTILS.dive(randomizeDiveCoordinates(3300, 3212, 0, 2))
     Interact:NPC("Ali Morrisane", "Trade")
-    --UTILS.randomSleep(3000)
 
     while not API.Compare2874Status(12, false) and elapsedTime < maxWaitTime do
         UTILS.randomSleep(waitInterval * 1000)
@@ -439,20 +460,6 @@ local function BuyOoglog()
     SHOP_STATUS.Ooglog = false
 end
 
-local function checkCues()
-    local chatTexts = API.GatherEvents_chat_check()
-    for k, v in pairs(chatTexts) do
-        if k > 10 then break end  -- Limit processing to recent messages
-
-        for _, cue in ipairs({"You empty the rock of sandstone."}) do
-            if string.find(v.text, cue) then
-                return true
-            end 
-        end
-    end
-    return false
-end
-
 local function Redsandstone()
     local IDS_redSandstone = {67969, 67970, 67971, 67972}
     local redSandstoneDepleted = {67973}
@@ -498,6 +505,164 @@ local function Crystalsandstone()
     SHOP_STATUS.Crystalsandstone = false
 end
 
+
+local function TaverlyHerb()
+    LODESTONES.TAVERLEY.Teleport()
+    clickRandomTile(2876, 3417, 2)
+    UTILS.countTicks(3)
+    UTILS.surge()
+    API.DoAction_Object1(0x5,API.OFF_ACT_GeneralObject_route1,{ 66666 },50);
+    
+    while not API.BankOpen2() and elapsedTime < maxWaitTime do
+        UTILS.randomSleep(waitInterval * 1000)
+        elapsedTime = elapsedTime + waitInterval
+    end
+
+    if API.BankOpen2() then 
+         API.KeyboardPress("3", 0, 50)
+    end
+
+    clickRandomTile(2922,3429,2)
+    UTILS.countTicks(2)
+    UTILS.surge()
+    clickRandomTile(2922,3429,2)
+    UTILS.countTicks(4)
+    UTILS.surge()
+    UTILS.dive(randomizeDiveCoordinates(2922, 3429, 0, 2))
+    UTILS.countTicks(1)
+    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route4,{ 14854 },50)
+
+    while not isOpen() and elapsedTime < maxWaitTime do
+        UTILS.randomSleep(waitInterval * 1000)
+        elapsedTime = elapsedTime + waitInterval
+    end
+
+      if not isOpen() then return end
+    
+         local Items = {3, 4, 5, 7, 8, 9, 10}
+        for _, Runes in ipairs(Items) do
+            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(100, 200, 300)
+        end
+        API.KeyboardPress("Esc", 0, 50)
+            UTILS.randomSleep(1000)
+    SHOP_STATUS.TaverlyHerb = false
+end
+
+local function FortHerbshop()
+    LODESTONES.FORT_FORINTHRY.Teleport()
+    clickRandomTile(3297,3568,1)    
+    UTILS.countTicks(3)
+    UTILS.surge()
+    clickRandomTile(3297,3568,1)
+    UTILS.countTicks(3)
+    UTILS.surge()
+    clickRandomTile(3297,3568,1)
+    UTILS.countTicks(1)
+    API.DoAction_Object1(0x2e,API.OFF_ACT_GeneralObject_route1,{ 125115 },50);
+
+    while not API.BankOpen2() and elapsedTime < maxWaitTime do
+        UTILS.randomSleep(waitInterval * 1000)
+        elapsedTime = elapsedTime + waitInterval
+    end
+
+    if API.BankOpen2() then 
+         API.KeyboardPress("3", 0, 50)
+    end
+
+   API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 26134 },50)
+
+   while not isOpen() and elapsedTime < maxWaitTime do
+    UTILS.randomSleep(waitInterval * 1000)
+    elapsedTime = elapsedTime + waitInterval
+end
+
+  if not isOpen() then return end
+
+     local Items = {3, 4, 5, 7, 8, 9}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
+    end
+    API.DoAction_Object1(0x2e,API.OFF_ACT_GeneralObject_route1,{ 125115 },50);
+    
+    while not API.BankOpen2() and elapsedTime < maxWaitTime do
+        UTILS.randomSleep(waitInterval * 1000)
+        elapsedTime = elapsedTime + waitInterval
+    end
+
+    if API.BankOpen2() then 
+         API.KeyboardPress("3", 0, 50)
+    end
+
+    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 26134 },50)
+
+    while not isOpen() and elapsedTime < maxWaitTime do
+     UTILS.randomSleep(waitInterval * 1000)
+     elapsedTime = elapsedTime + waitInterval
+ end
+ 
+   if not isOpen() then return end
+ 
+      local Items = {10}
+     for _, Runes in ipairs(Items) do
+         API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+         API.RandomSleep2(100, 200, 300)
+     end
+     API.DoAction_Object1(0x2e,API.OFF_ACT_GeneralObject_route1,{ 125115 },50);
+    
+     while not API.BankOpen2() and elapsedTime < maxWaitTime do
+        UTILS.randomSleep(waitInterval * 1000)
+        elapsedTime = elapsedTime + waitInterval
+    end
+ 
+     if API.BankOpen2() then 
+          API.KeyboardPress("3", 0, 50)
+     end
+
+    SHOP_STATUS.FortHerbshop = false   
+end
+
+local function PriffherbShop()
+    LODESTONES.PRIFDDINAS.Teleport()
+    clickRandomTile(2235, 3398, 2)
+    UTILS.countTicks(3)
+    UTILS.surge()
+    clickRandomTile(2235, 3398, 2)
+    UTILS.countTicks(3)
+    UTILS.surge()
+    clickRandomTile(2235, 3398, 2)
+    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 20285 },50)
+
+    while not isOpen() and elapsedTime < maxWaitTime do
+        UTILS.randomSleep(waitInterval * 1000)
+        elapsedTime = elapsedTime + waitInterval
+    end
+
+      if not isOpen() then return end
+    
+         local Items = {4, 5, 6,9, 10, 11,12}
+        for _, Runes in ipairs(Items) do
+            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(100, 200, 300)
+        end
+
+        API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {92692}, 50)
+
+        while not API.BankOpen2() and elapsedTime < maxWaitTime do
+            UTILS.randomSleep(waitInterval * 1000)
+            elapsedTime = elapsedTime + waitInterval
+        end
+    
+        if API.BankOpen2() then
+            API.KeyboardPress("3", 0, 50)
+        end
+    
+        API.RandomSleep2(300, 500, 600)
+    
+        SHOP_STATUS.PriffherbShop = false
+end
+
 API.Write_LoopyLoop(true)
 while API.Read_LoopyLoop() do
     API.DoRandomEvents()
@@ -523,6 +688,12 @@ while API.Read_LoopyLoop() do
         Redsandstone()
     elseif SHOP_STATUS.Crystalsandstone then
         Crystalsandstone()
+    elseif SHOP_STATUS.TaverlyHerb then
+        TaverlyHerb()
+    elseif SHOP_STATUS.FortHerbshop then
+        FortHerbshop()
+    elseif SHOP_STATUS.PriffherbShop then
+        PriffherbShop()
     else        
         print("Finished buying from all supported shops")
         API.Write_LoopyLoop(false)
