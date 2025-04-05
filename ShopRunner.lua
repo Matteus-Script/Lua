@@ -1,6 +1,6 @@
 --[[
-# Script Name:   <RuneShop Runner>
-# Description:   <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
+# Script Name:   <Shop Runner>
+# Description:   <Dailies Shop stuff + more>
 # Author:        <Matteus>
 # Version:       <1.2>
 # Date:          <2025.03.24>
