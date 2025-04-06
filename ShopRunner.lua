@@ -33,7 +33,7 @@ local function isOpen()
 end
 
 local SHOP_STATUS = {
-   --[[  Lunar = true,
+    Lunar = true,
     Yannile = true,
     Sarim = true,
     Void = true,
@@ -45,7 +45,7 @@ local SHOP_STATUS = {
     Redsandstone = true, 
     Crystalsandstone = true,
     TaverlyHerb = true,
-    FortHerbshop = true, ]]
+    FortHerbshop = true,
     PriffherbShop = true,
 }
 
