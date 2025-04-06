@@ -1,8 +1,8 @@
 --[[
-# Script Name:   <Shop Runner>
-# Description:   <Dailies Shop stuff + more>
+# Script Name:   <RuneShop Runner>
+# Description:   <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
 # Author:        <Matteus>
-# Version:       <1.2>
+# Version:       <1.21>
 # Date:          <2025.03.24>
 --]]
 
@@ -14,6 +14,8 @@ v1.1 - 03-04-2025
     - Added support for Crystalsandstone and Redsandstone make sure you have porter charges and GOTE enabled will add other method in future -turn on Resourceful aura to get more :)
 v.1.2 - 05-04-2025
     - Added support for Herblore shops in Taverly, Fort Forinthry and Prifddinas
+v.1.21 - 06-04-2025
+    - small fixes
 ]]--
 
 local API = require("api")
@@ -31,7 +33,7 @@ local function isOpen()
 end
 
 local SHOP_STATUS = {
-    BABA_YAGA = true,
+   --[[  Lunar = true,
     Yannile = true,
     Sarim = true,
     Void = true,
@@ -43,7 +45,7 @@ local SHOP_STATUS = {
     Redsandstone = true, 
     Crystalsandstone = true,
     TaverlyHerb = true,
-    FortHerbshop = true,
+    FortHerbshop = true, ]]
     PriffherbShop = true,
 }
 
@@ -70,14 +72,6 @@ local function BuyItems(items)
     UTILS.randomSleep(1000)
 end
 
-local function waitUntil(maxWaitTime, waitInterval)
-    local elapsedTime = 0
-    while elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
-end
-
 local function checkCues()
     local chatTexts = API.GatherEvents_chat_check()
     for k, v in pairs(chatTexts) do
@@ -92,27 +86,37 @@ local function checkCues()
     return false
 end
 
-local function buyBabaYaga() 
+local function Lunar() 
     LODESTONES.LUNAR_ISLE.Teleport()
     clickRandomTile(2092,3931,2)
     UTILS.countTicks(8)
     UTILS.dive(randomizeDiveCoordinates(2101, 3930, 0, 2))
+    UTILS.countTicks(1)
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route,{ 4512 },50)
     UTILS.countTicks(1)
     UTILS.surge()
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route,{ 4512 },50)
     while not API.PInArea(3103, 5, 4447, 5, 0) do
-        UTILS.randomSleep(1000) 
+        UTILS.randomSleep(100) 
     end
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 4513 },50)
     
-        waitUntil(5, 1)
+    while not isOpen() and elapsedTime < maxWaitTime do
+        UTILS.randomSleep(waitInterval * 1000)
+        elapsedTime = elapsedTime + waitInterval
+    end
+
         if not isOpen() then return end
 
         local Items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
-        BuyItems(Items) 
+        for _, Runes in ipairs(Items) do
+            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(100, 200, 300)
+        end
+        API.KeyboardPress("Esc", 0, 50)
+        UTILS.randomSleep(1000) 
 
-    SHOP_STATUS.BABA_YAGA = false
+    SHOP_STATUS.Lunar = false
 end 
 
 local teleportedYannile = false
@@ -633,6 +637,7 @@ local function PriffherbShop()
     UTILS.surge()
     clickRandomTile(2235, 3398, 2)
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 20285 },50)
+    UTILS.randomSleep(3000)
 
     while not isOpen() and elapsedTime < maxWaitTime do
         UTILS.randomSleep(waitInterval * 1000)
@@ -666,8 +671,8 @@ end
 API.Write_LoopyLoop(true)
 while API.Read_LoopyLoop() do
     API.DoRandomEvents()
-    if SHOP_STATUS.BABA_YAGA then
-        buyBabaYaga()
+    if SHOP_STATUS.Lunar then
+        Lunar()
     elseif SHOP_STATUS.Yannile then
         buyMagesGuild()   
     elseif SHOP_STATUS.Sarim then
