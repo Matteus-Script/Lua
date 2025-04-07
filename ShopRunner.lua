@@ -2,7 +2,7 @@
 # Script Name:   <RuneShop Runner>
 # Description:   <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
 # Author:        <Matteus>
-# Version:       <1.21>
+# Version:       <1.2>
 # Date:          <2025.03.24>
 --]]
 
@@ -14,8 +14,6 @@ v1.1 - 03-04-2025
     - Added support for Crystalsandstone and Redsandstone make sure you have porter charges and GOTE enabled will add other method in future -turn on Resourceful aura to get more :)
 v.1.2 - 05-04-2025
     - Added support for Herblore shops in Taverly, Fort Forinthry and Prifddinas
-v.1.21 - 06-04-2025
-    - small fixes
 ]]--
 
 local API = require("api")
@@ -575,6 +573,7 @@ local function FortHerbshop()
     end
 
    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 26134 },50)
+   API.RandomSleep2(300, 500, 600)
 
    while not isOpen() and elapsedTime < maxWaitTime do
     UTILS.randomSleep(waitInterval * 1000)
@@ -589,6 +588,7 @@ end
         API.RandomSleep2(100, 200, 300)
     end
     API.DoAction_Object1(0x2e,API.OFF_ACT_GeneralObject_route1,{ 125115 },50);
+    API.RandomSleep2(300, 500, 600)
     
     while not API.BankOpen2() and elapsedTime < maxWaitTime do
         UTILS.randomSleep(waitInterval * 1000)
@@ -600,6 +600,7 @@ end
     end
 
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 26134 },50)
+    API.RandomSleep2(300, 500, 600)
 
     while not isOpen() and elapsedTime < maxWaitTime do
      UTILS.randomSleep(waitInterval * 1000)
@@ -614,6 +615,7 @@ end
          API.RandomSleep2(100, 200, 300)
      end
      API.DoAction_Object1(0x2e,API.OFF_ACT_GeneralObject_route1,{ 125115 },50);
+     API.RandomSleep2(300, 500, 600)
     
      while not API.BankOpen2() and elapsedTime < maxWaitTime do
         UTILS.randomSleep(waitInterval * 1000)
@@ -637,7 +639,7 @@ local function PriffherbShop()
     UTILS.surge()
     clickRandomTile(2235, 3398, 2)
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 20285 },50)
-    UTILS.randomSleep(3000)
+    UTILS.randomSleep(4000)
 
     while not isOpen() and elapsedTime < maxWaitTime do
         UTILS.randomSleep(waitInterval * 1000)
