@@ -88,8 +88,7 @@ local function Lunar()
     LODESTONES.LUNAR_ISLE.Teleport()
     clickRandomTile(2092,3931,2)
     UTILS.countTicks(8)
-    UTILS.dive(randomizeDiveCoordinates(2101, 3930, 0, 2))
-    UTILS.countTicks(1)
+    UTILS.dive(randomizeDiveCoordinates(2100, 3929, 0, 1))
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route,{ 4512 },50)
     UTILS.countTicks(1)
     UTILS.surge()
@@ -668,6 +667,13 @@ local function PriffherbShop()
         API.RandomSleep2(300, 500, 600)
     
         SHOP_STATUS.PriffherbShop = false
+end
+
+if API.CacheEnabled then
+    print ("Cache is enabled, running the script.")
+else
+    print("Cache is disabled turn it on.")
+    API.Write_LoopyLoop(false)
 end
 
 API.Write_LoopyLoop(true)
