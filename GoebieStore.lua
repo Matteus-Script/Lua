@@ -73,7 +73,7 @@ end
 
 local function shouldBank()
     local inventoryItems = API.ReadInvArrays33()
-    if not inventoryItems then return true end  -- If inventory can't be read, assume banking is needed.
+    if not inventoryItems then return true end 
 
     for _, item in ipairs(inventoryItems) do
         if item.textitem and (string.find(item.textitem, "(shaft)") or string.find(item.textitem, "(Headless)")) then
@@ -82,7 +82,7 @@ local function shouldBank()
         end
     end
 
-    return true  -- If neither is found, banking is needed.
+    return true  
 end
 
 local function banking()
