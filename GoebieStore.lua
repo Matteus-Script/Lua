@@ -29,7 +29,7 @@ local lastPotionTime = 0
 local lastCycleTime = os.time()
 local bankingStateCalls = 0
 local firstLoop = true
-local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING" }
+local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC"}
 local startXp = {}
 local lastXpTime = os.time()
 
@@ -73,7 +73,7 @@ end
 
 local function shouldBank()
     local inventoryItems = API.ReadInvArrays33()
-    if not inventoryItems then return true end 
+    if not inventoryItems then return true end  -- If inventory can't be read, assume banking is needed.
 
     for _, item in ipairs(inventoryItems) do
         if item.textitem and (string.find(item.textitem, "(shaft)") or string.find(item.textitem, "(Headless)")) then
@@ -82,7 +82,7 @@ local function shouldBank()
         end
     end
 
-    return true 
+    return true  -- If neither is found, banking is needed.
 end
 
 local function banking()
@@ -125,7 +125,6 @@ local function banking2()
     if API.BankOpen2 then
         API.KeyboardPress("3", 0, 50)
     end
-    UTILS.countTicks(2)
 end
 
 local function Buypotions()
@@ -250,53 +249,90 @@ local function checkForVialOrUnfItems()
     for i = 1, #inventoryItems do
         local item = inventoryItems[i]
 
-        if item.textitem and    (string.find(item.textitem, "(Grimy)") or 
-                                string.find(item.textitem, "Vial") or
-                                 string.find(item.textitem, "(unf)") or 
-                                 string.find(item.textitem, "(flask)") or
-                                 string.find(item.textitem, "(shaft)") or
-                                 string.find(item.textitem, "(Headless)") or
-                                  string.find(item.textitem, "(Primal)")or
-                                   string.find(item.textitem, "(Uncut)")or
-                                   string.find(item.textitem, "(logs)")or
-                                   string.find(item.textitem, "(unstrung)")or
-                                    string.find(item.textitem, "(milk)")) then
-            print("Found item: " .. item.textitem .. " (" .. item.itemid1 .. ")")
+        if item.textitem and (
+            string.find(item.textitem, "Grimy") or 
+            string.find(item.textitem, "Vial") or
+            string.find(item.textitem, "(unf)") or 
+            string.find(item.textitem, "flask") or
+            string.find(item.textitem, "shaft") or
+            string.find(item.textitem, "Headless") or
+            string.find(item.textitem, "Primal") or
+            string.find(item.textitem, "Uncut") or
+            string.find(item.textitem, "logs") or
+            string.find(item.textitem, "(unstrung)") or
+            string.find(item.textitem, "leather") or
+            string.find(item.textitem, "glass") or
+            string.find(item.textitem, "decorated") or
+            string.find(item.textitem, "sandstone") or
+            string.find(item.textitem, "Unicorn") or
+            string.find(item.textitem, "Mud rune") or
+            string.find(item.textitem, "Miasma rune") or
+            string.find(item.textitem, "nest") or
+            string.find(item.textitem, "scale") or
+            string.find(item.textitem, "milk")
+        ) then
+            local cleanedName = string.gsub(item.textitem, "<.->", "") -- remove tags
+            print("Found item: " .. cleanedName .. " (" .. item.itemid1 .. ")")
 
             if not added[item.itemid1] and item.itemid1 > 0 then
                 added[item.itemid1] = true
-                return item.itemid1
+                return item.itemid1, cleanedName
             end
         end
     end
 end
+
 
 local function performCraftingAction()
-    local unfItem = checkForVialOrUnfItems()
+    local unfItem, itemName = checkForVialOrUnfItems()
+    if not unfItem or not itemName then
+        return
+    end
 
-    if unfItem then
-        if API.DoAction_Inventory1(unfItem, 0, 1, API.OFF_ACT_GeneralInterface_route) then
-            if waitCraftingInterface() then
-                API.KeyboardPress32(0x20, 0)
-                UTILS.countTicks(5)
-                return
-            else
-                print("Crafting interface did not open. Stopping script.")
-                ShouldContinue = false
-                return
-            end
+    itemName = itemName:lower()
+
+    if itemName:find("sandstone") then
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 1, 1461, 1, 125, API.OFF_ACT_GeneralInterface_route)
+        return
+    end
+
+    if itemName:find("decorated") then
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 1, 1461, 1, 209, API.OFF_ACT_GeneralInterface_route)
+        if waitCraftingInterface() then
+            API.KeyboardPress32(0x20, 0)
+            UTILS.countTicks(5)
+        else
+            ShouldContinue = false
         end
-    else
-        print("No items to craft. Returning to banking.")
+        return
+    end
+
+    if itemName:find("miasma rune") or
+       itemName:find("mud rune") or
+       itemName:find("unicorn horn") or
+       itemName:find("scale") or
+       itemName:find("bird's nest") then
+        API.DoAction_Interface(0x9e,0xffffffff,0,1461,1,211,API.OFF_ACT_Bladed_interface_route)
+        API.RandomSleep2(300, 300, 100)
+        API.DoAction_Inventory1(unfItem,0,0,API.OFF_ACT_GeneralInterface_route1)
+        return
+    end
+
+    print("Normal crafting with item: " .. itemName)
+    if API.DoAction_Inventory1(unfItem, 0, 1, API.OFF_ACT_GeneralInterface_route) then
+        if waitCraftingInterface() then
+            API.KeyboardPress32(0x20, 0)
+            UTILS.countTicks(5)
+        else
+            ShouldContinue = false
+        end
     end
 end
-
 
 while API.Read_LoopyLoop(true) and ShouldContinue do
     checkXpIncrease()
 
     if bankingStateCalls >= 2 then
-        print("Banking state was entered twice consecutively. Stopping script.")
         ShouldContinue = false
         break
     end
