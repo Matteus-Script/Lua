@@ -29,7 +29,7 @@ local lastPotionTime = 0
 local lastCycleTime = os.time()
 local bankingStateCalls = 0
 local firstLoop = true
-local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC"}
+local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC", "DIVINATION", "PRAYER", "FIREMAKING"}
 local startXp = {}
 local lastXpTime = os.time()
 
@@ -258,6 +258,7 @@ local function checkForVialOrUnfItems()
             string.find(item.textitem, "Headless") or
             string.find(item.textitem, "Primal") or
             string.find(item.textitem, "Uncut") or
+            string.find(item.textitem, "Logs") or
             string.find(item.textitem, "logs") or
             string.find(item.textitem, "(unstrung)") or
             string.find(item.textitem, "leather") or
@@ -269,6 +270,8 @@ local function checkForVialOrUnfItems()
             string.find(item.textitem, "Miasma rune") or
             string.find(item.textitem, "nest") or
             string.find(item.textitem, "scale") or
+            string.find(item.textitem, "energy") or
+            string.find(item.textitem, "stick") or
             string.find(item.textitem, "milk")
         ) then
             local cleanedName = string.gsub(item.textitem, "<.->", "") -- remove tags
@@ -312,10 +315,18 @@ local function performCraftingAction()
        itemName:find("unicorn horn") or
        itemName:find("scale") or
        itemName:find("bird's nest") then
-        API.DoAction_Interface(0x9e,0xffffffff,0,1461,1,211,API.OFF_ACT_Bladed_interface_route)
+        API.DoAction_Interface(0x9e, 0xffffffff, 0, 1461, 1, 211, API.OFF_ACT_Bladed_interface_route)
         API.RandomSleep2(300, 300, 100)
-        API.DoAction_Inventory1(unfItem,0,0,API.OFF_ACT_GeneralInterface_route1)
+        API.DoAction_Inventory1(unfItem, 0, 0, API.OFF_ACT_GeneralInterface_route1)
         return
+    end
+
+    if itemName:find("energy") then
+        if API.InvStackSize(unfItem) < 120 then
+            print("Out of energy, stopping.")
+            ShouldContinue = false
+            return
+        end
     end
 
     print("Normal crafting with item: " .. itemName)
@@ -328,6 +339,8 @@ local function performCraftingAction()
         end
     end
 end
+
+
 
 while API.Read_LoopyLoop(true) and ShouldContinue do
     checkXpIncrease()
@@ -371,7 +384,7 @@ while API.Read_LoopyLoop(true) and ShouldContinue do
             local currentTime = os.time()
             local timeDiff = currentTime - lastPotionTime
 
-            if timeDiff >= 100 then
+            if timeDiff >= 120 then
                 Buypotions()
                 lastPotionTime = currentTime
             else
