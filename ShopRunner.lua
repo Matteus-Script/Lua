@@ -20,7 +20,7 @@ local API = require("api")
 local LODESTONES = require("lodestones")       
 local UTILS = require("utils")
 
-local maxWaitTime = 20
+local maxWaitTime = 30
 local elapsedTime = 0
 local waitInterval = 0.5
 
@@ -30,21 +30,34 @@ local function isOpen()
     return API.Compare2874Status(40, false) or API.Compare2874Status(18, false)
 end
 
+local function OpenDoor(Obj0ID, Obj0XCoord, Obj0YCoord, Obj12ID)
+    local door = #API.GetAllObjArray2({Obj0ID}, 5, {0}, WPOINT.new(Obj0XCoord, Obj0YCoord, 0))    
+    if door == 0 then 
+        API.DoAction_Object1(0x31,API.OFF_ACT_GeneralObject_route0,{Obj12ID},5) --Open door
+        while API.Read_LoopyLoop() and door == 0 do
+            UTILS.randomSleep(100)
+            door = #API.GetAllObjArray2({Obj0ID}, 5, {0}, WPOINT.new(Obj0XCoord, Obj0YCoord, 0))  
+        end
+        return true
+    end
+    return false
+end
+
 local SHOP_STATUS = {
-    Lunar = true,
+   --[[  Lunar = true,
     Yannile = true,
     Sarim = true,
     Void = true,
     Varrock = true,
     AlKharid = true,
     ZamorakMage = true,
-    Magebank = true,
+    Magebank = true, ]]
     Ooglog = true,
-    Redsandstone = true, 
+    --[[ Redsandstone = true, 
     Crystalsandstone = true,
     TaverlyHerb = true,
     FortHerbshop = true,
-    PriffherbShop = true,
+    PriffherbShop = true, ]]
 }
 
 local function clickRandomTile(baseX, baseY, range)
@@ -141,6 +154,7 @@ local function buyMagesGuild()
         UTILS.countTicks(3)
         UTILS.surge()
         UTILS.dive(randomizeDiveCoordinates(2573, 3092, 0, 2))
+        API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
         UTILS.countTicks(1)
         UTILS.surge()
 
@@ -187,15 +201,16 @@ local function BuySarim()
     end
 
     if atPortSarim() then
-        UTILS.dive(randomizeDiveCoordinates(3021, 3227, 0, 2))
+        UTILS.dive(randomizeDiveCoordinates(3021, 3227, 0, 1))
         clickRandomTile(3019, 3259, 2)
         UTILS.countTicks(3)
         UTILS.surge()
-        clickRandomTile(3019, 3259, 2)
-        UTILS.countTicks(5)
+        clickRandomTile(3018, 3259, 1)
+        UTILS.countTicks(8)
     end
+        --OpenDoor(40109, 3017, 3259, 40108)
         Interact:Object("Door", "Open") 
-        UTILS.randomSleep(5000)         
+        UTILS.randomSleep(4000)         
         API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {583}, 50)
         UTILS.randomSleep(1000)
     
@@ -396,7 +411,7 @@ local function BuyMagebank()
     UTILS.countTicks(4)
     UTILS.surge()
     clickRandomTile(3094, 3958, 1)
-    UTILS.randomSleep(10000)
+    UTILS.randomSleep(9000)
     API.DoAction_Object2(0x29,API.OFF_ACT_GeneralObject_route0,{ 64729 },50,WPOINT.new(3094,3958,0));
     UTILS.randomSleep(3000)
     API.DoAction_Object2(0x29,API.OFF_ACT_GeneralObject_route0,{ 64729 },50,WPOINT.new(3091,3958,0));
@@ -441,7 +456,8 @@ local function BuyOoglog()
     clickRandomTile(2560, 2849, 2)
     UTILS.randomSleep(3000)
     UTILS.surge()
-    Interact:NPC("Chargurr", "Trade")
+    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 7056 },50)
+    --Interact:NPC("Chargurr", "Trade", 30)
     UTILS.randomSleep(3000)
 
     while not isOpen() and elapsedTime < maxWaitTime do
@@ -529,6 +545,7 @@ local function TaverlyHerb()
     clickRandomTile(2922,3429,2)
     UTILS.countTicks(4)
     UTILS.surge()
+    clickRandomTile(2922,3429,2)
     UTILS.dive(randomizeDiveCoordinates(2922, 3429, 0, 2))
     UTILS.countTicks(1)
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route4,{ 14854 },50)
