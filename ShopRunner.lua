@@ -20,44 +20,27 @@ local API = require("api")
 local LODESTONES = require("lodestones")       
 local UTILS = require("utils")
 
-local maxWaitTime = 30
-local elapsedTime = 0
-local waitInterval = 0.5
-
 API.SetMaxIdleTime(10)
 
 local function isOpen()
     return API.Compare2874Status(40, false) or API.Compare2874Status(18, false)
 end
 
-local function OpenDoor(Obj0ID, Obj0XCoord, Obj0YCoord, Obj12ID)
-    local door = #API.GetAllObjArray2({Obj0ID}, 5, {0}, WPOINT.new(Obj0XCoord, Obj0YCoord, 0))    
-    if door == 0 then 
-        API.DoAction_Object1(0x31,API.OFF_ACT_GeneralObject_route0,{Obj12ID},5) --Open door
-        while API.Read_LoopyLoop() and door == 0 do
-            UTILS.randomSleep(100)
-            door = #API.GetAllObjArray2({Obj0ID}, 5, {0}, WPOINT.new(Obj0XCoord, Obj0YCoord, 0))  
-        end
-        return true
-    end
-    return false
-end
-
 local SHOP_STATUS = {
-   --[[  Lunar = true,
+    Lunar = true,
     Yannile = true,
     Sarim = true,
     Void = true,
     Varrock = true,
     AlKharid = true,
     ZamorakMage = true,
-    Magebank = true, ]]
+    Magebank = true,
     Ooglog = true,
-    --[[ Redsandstone = true, 
+    Redsandstone = true, 
     Crystalsandstone = true,
     TaverlyHerb = true,
     FortHerbshop = true,
-    PriffherbShop = true, ]]
+    PriffherbShop = true,
 }
 
 local function clickRandomTile(baseX, baseY, range)
@@ -79,7 +62,6 @@ local function BuyItems(items)
         API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, rune, API.OFF_ACT_GeneralInterface_route)
         API.RandomSleep2(100, 200, 300)
     end 
-    API.KeyboardPress("Esc", 0, 50)
     UTILS.randomSleep(1000)
 end
 
@@ -97,49 +79,35 @@ local function checkCues()
     return false
 end
 
-local function Lunar() 
+local function Lunar()
     LODESTONES.LUNAR_ISLE.Teleport()
-    clickRandomTile(2092,3931,2)
+    clickRandomTile(2092, 3931, 2)
     UTILS.countTicks(8)
     UTILS.dive(randomizeDiveCoordinates(2100, 3929, 0, 1))
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route,{ 4512 },50)
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {4512}, 50)
     UTILS.countTicks(1)
     UTILS.surge()
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route,{ 4512 },50)
-    while not API.PInArea(3103, 5, 4447, 5, 0) do
-        UTILS.randomSleep(100) 
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {4512}, 50)
+
+    UTILS.SleepUntil(function()
+        return API.PInArea(3103, 5, 4447, 5, 0)
+    end, 15, "Arrival at Lunar isle target area")
+
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {4513}, 50)
+
+    local opened = UTILS.SleepUntil(isOpen, 10, "Lunar shop open")
+    if not opened then return end
+
+    local Items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
     end
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 4513 },50)
-    
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
-
-        if not isOpen() then return end
-
-        local Items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
-        for _, Runes in ipairs(Items) do
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
-        end
-        API.KeyboardPress("Esc", 0, 50)
-        UTILS.randomSleep(1000) 
-
     SHOP_STATUS.Lunar = false
-end 
-
-local teleportedYannile = false
+end
 
 local function buyMagesGuild()
-    if not teleportedYannile  then
-        LODESTONES.YANILLE.Teleport()
-        teleportedYannile  = true  
-    end
-
-    local function atMagesGuild()
-        return API.PInArea(2529, 5, 3094, 5, 0)
-    end
+    LODESTONES.YANILLE.Teleport()
 
     local function inMagesGuild()
         return API.PInArea(2585, 1, 3088, 1, 0)
@@ -149,110 +117,86 @@ local function buyMagesGuild()
         return API.PInArea(2590, 1, 3092, 1, 0)
     end
 
-    if atMagesGuild() then
-        clickRandomTile(2565, 3091, 2)
-        UTILS.countTicks(3)
-        UTILS.surge()
-        UTILS.dive(randomizeDiveCoordinates(2573, 3092, 0, 2))
-        API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
-        UTILS.countTicks(1)
-        UTILS.surge()
+    clickRandomTile(2565, 3091, 2)
+    UTILS.countTicks(3)
+    UTILS.surge()
+    UTILS.dive(randomizeDiveCoordinates(2573, 3092, 0, 2))
+    API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
+    UTILS.countTicks(1)
+    UTILS.surge()
+    API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
 
-        API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
+    local insideGuild = UTILS.SleepUntil(inMagesGuild, 10, "entering Mage Guild")
+    if not insideGuild then return end
+
+    API.DoAction_Object1(0x34, API.OFF_ACT_GeneralObject_route0, {1722}, 50)
+    UTILS.countTicks(3)
+
+    local atShop = UTILS.SleepUntil(isAtShop, 10, "reaching Mage Guild shop")
+    if not atShop then return end
+
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {461}, 50)
+    UTILS.randomSleep(1000)
+
+    local opened = UTILS.SleepUntil(isOpen, 10, "Mage Guild shop open")
+    if not opened then return end
+
+    local Items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
     end
-
-    if inMagesGuild() then
-        API.DoAction_Object1(0x34, API.OFF_ACT_GeneralObject_route0, {1722}, 50)
-        UTILS.countTicks(3)
-    end
-
-    if isAtShop() then
-        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {461}, 50)
-        UTILS.randomSleep(1000)
-
-        while not isOpen() and elapsedTime < maxWaitTime do
-            UTILS.randomSleep(waitInterval * 1000)
-            elapsedTime = elapsedTime + waitInterval
-        end
-
-        if not isOpen() then return end
-
-        local Items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
-        for _, Runes in ipairs(Items) do
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
-        end
-        API.KeyboardPress("Esc", 0, 50)
-            UTILS.randomSleep(1000) 
-        SHOP_STATUS.Yannile= false
-    end
+    SHOP_STATUS.Yannile = false
 end
 
-local teleportedSarim = false
 
 local function BuySarim()
-     if not teleportedSarim then
-        LODESTONES.PORT_SARIM.Teleport()
-        teleportedSarim = true
-    end 
+    LODESTONES.PORT_SARIM.Teleport()
+    UTILS.dive(randomizeDiveCoordinates(3021, 3227, 0, 1))
+    clickRandomTile(3019, 3259, 2)
+    UTILS.countTicks(3)
+    UTILS.surge()
+    clickRandomTile(3018, 3259, 1)
+    UTILS.countTicks(8)
+    Interact:Object("Door", "Open") 
+    UTILS.randomSleep(4000)
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {583}, 50)
+    UTILS.randomSleep(1000)
 
-    local function atPortSarim()
-        return API.PInArea(3011, 5, 3215, 5, 0)
-    end
+    local opened = UTILS.SleepUntil(isOpen, 10, "Port Sarim shop open")
+    if not opened then return end
 
-    if atPortSarim() then
-        UTILS.dive(randomizeDiveCoordinates(3021, 3227, 0, 1))
-        clickRandomTile(3019, 3259, 2)
-        UTILS.countTicks(3)
-        UTILS.surge()
-        clickRandomTile(3018, 3259, 1)
-        UTILS.countTicks(8)
+    local Items = {0, 1, 2, 3, 4, 5, 6, 7}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
     end
-        --OpenDoor(40109, 3017, 3259, 40108)
-        Interact:Object("Door", "Open") 
-        UTILS.randomSleep(4000)         
-        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {583}, 50)
-        UTILS.randomSleep(1000)
-    
-         while not isOpen() and elapsedTime < maxWaitTime do
-            UTILS.randomSleep(waitInterval * 1000)
-            elapsedTime = elapsedTime + waitInterval
-        end
-    
-            if not isOpen() then return end
-    
-            local Items = {0, 1, 2, 3, 4, 5, 6, 7}
-            for _, Runes in ipairs(Items) do
-                API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-                API.RandomSleep2(100, 200, 300)
-            end
-            API.KeyboardPress("Esc", 0, 50)
-            UTILS.randomSleep(1000) 
-            SHOP_STATUS.Sarim = false
+    SHOP_STATUS.Sarim = false
 end
 
 local function BuyVoid()
     LODESTONES.PORT_SARIM.Teleport()
+
     Interact:NPC("Squire", "Travel")
-    while not API.PInArea(2651, 10, 2673, 10, 0) do
-        UTILS.randomSleep(2000) 
+
+    local function atVoidIsland()
+        return API.PInArea(2651, 10, 2673, 10, 0)
     end
+
+    local arrived = UTILS.SleepUntil(atVoidIsland, 15, "arrival at Void Knight Island")
+    if not arrived then return end
+
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {3798}, 50)
     UTILS.randomSleep(1000)
 
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
+    local opened = UTILS.SleepUntil(isOpen, 10, "Void Knight shop open")
+    if not opened then return end
+
+    local Items = {0, 1, 2, 3, 4, 5, 6, 7}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
     end
-        if not isOpen() then return end
-    
-        local Items = {0, 1, 2, 3, 4, 5, 6, 7}
-        for _, Runes in ipairs(Items) do
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
-        end 
-        API.KeyboardPress("Esc", 0, 50)
-            UTILS.randomSleep(1000) 
     SHOP_STATUS.Void = false
 end
 
@@ -264,59 +208,56 @@ local function BuyVarrock()
     UTILS.dive(randomizeDiveCoordinates(3233, 3390, 0, 2))
     UTILS.countTicks(1)
     UTILS.surge()
-    clickRandomTile(3253,3397,1)
-    while not API.PInArea(3253, 2, 3397, 2, 0) do
-        UTILS.randomSleep(2000) 
-    end
-    Interact:Object("Door", "Open",3)
+    clickRandomTile(3253, 3397, 1)
+
+    local reachedShop = UTILS.SleepUntil(function()
+        return API.PInArea(3253, 2, 3397, 2, 0)
+    end, 10, "reaching Varrock rune shop")
+
+    if not reachedShop then return end
+
+    Interact:Object("Door", "Open", 3)
     UTILS.randomSleep(3000)
-    Interact:NPC("Aubury", "Trade",8)
+
+    Interact:NPC("Aubury", "Trade", 8)
     UTILS.randomSleep(1000)
 
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
+    local opened = UTILS.SleepUntil(isOpen, 10, "Varrock rune shop open")
+    if not opened then return end
+
+    local Items = {0, 1, 2, 3, 4, 5, 6, 7}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
     end
-        if not isOpen() then return end
-    
-        local Items = {0, 1, 2, 3, 4, 5, 6, 7}
-        for _, Runes in ipairs(Items) do
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
-        end 
-        API.KeyboardPress("Esc", 0, 50)
-            UTILS.randomSleep(1000) 
     SHOP_STATUS.Varrock = false
 end
 
+
 local function BuyAlkharid()
     LODESTONES.AL_KHARID.Teleport()
-    clickRandomTile(3300, 3212, 2)
-    UTILS.countTicks(5)
-    UTILS.dive(randomizeDiveCoordinates(3300, 3212, 0, 2))
+    clickRandomTile(3300, 3211, 2)
+    UTILS.countTicks(8)
+    UTILS.dive(randomizeDiveCoordinates(3300, 3211, 0, 2))
+
     Interact:NPC("Ali Morrisane", "Trade")
 
-    while not API.Compare2874Status(12, false) and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
+    local openedDialogue1 = UTILS.SleepUntil(function()
+        return API.Compare2874Status(12, false)
+    end, 10, "Ali Morrisane first dialogue")
 
-    if not API.Compare2874Status(12, false) then return end  
+    if not openedDialogue1 then return end
 
     API.RandomSleep2(600, 600, 600)
     API.KeyboardPress("1", 0, 50)
     API.RandomSleep2(600, 600, 600)
     API.KeyboardPress("3", 0, 50)
 
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
+    local shopOpened1 = UTILS.SleepUntil(isOpen, 10, "Ali Morrisane first shop open")
+    if not shopOpened1 then return end
 
-    if not isOpen() then return end  
-
-    local Items = {0, 1, 2, 3}
-    for _, Runes in ipairs(Items) do
+    local Items1 = {0, 1, 2, 3}
+    for _, Runes in ipairs(Items1) do
         API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
         API.RandomSleep2(100, 200, 300)
     end
@@ -324,43 +265,38 @@ local function BuyAlkharid()
     Interact:NPC("Ali Morrisane", "Trade")
     UTILS.randomSleep(1000)
 
-    elapsedTime = 0 
-    while not API.Compare2874Status(12, false) and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
+    local openedDialogue2 = UTILS.SleepUntil(function()
+        return API.Compare2874Status(12, false)
+    end, 10, "Ali Morrisane second dialogue")
 
-    if not API.Compare2874Status(12, false) then return end  
+    if not openedDialogue2 then return end
 
     API.RandomSleep2(600, 600, 600)
     API.KeyboardPress("1", 0, 50)
     API.RandomSleep2(600, 600, 600)
     API.KeyboardPress("4", 0, 50)
 
-    elapsedTime = 0 
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
+    local shopOpened2 = UTILS.SleepUntil(isOpen, 10, "Ali Morrisane second shop open")
+    if not shopOpened2 then return end
 
-    if not isOpen() then return end  
-
-    local Items2 = {0, 1, 2, 3, 4, 5, 6, 7, 8}  
+    local Items2 = {0, 1, 2, 3, 4, 5, 6, 7, 8}
     for _, Runes in ipairs(Items2) do
         API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
         API.RandomSleep2(100, 200, 300)
     end
-    API.KeyboardPress("Esc", 0, 50)
-            UTILS.randomSleep(1000) 
     SHOP_STATUS.AlKharid = false
 end
 
 local function BuyZamorakMage()
     LODESTONES.EDGEVILLE.Teleport()
     Interact:Object("Wilderness wall", "Cross")
-    while not API.PInArea(3066, 1, 3523, 1, 0) do
-        UTILS.randomSleep(2000) 
-    end
+
+    local crossedWall = UTILS.SleepUntil(function()
+        return API.PInArea(3066, 1, 3523, 1, 0)
+    end, 10, "Crossed Wilderness wall")
+
+    if not crossedWall then return end
+
     UTILS.countTicks(2)
     clickRandomTile(3093, 3556, 2)
     UTILS.countTicks(3)
@@ -368,22 +304,18 @@ local function BuyZamorakMage()
     clickRandomTile(3093, 3556, 2)
     UTILS.countTicks(3)
     UTILS.dive(randomizeDiveCoordinates(3109, 3557, 0, 2))
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 2257 },50)
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {2257}, 50)
     UTILS.randomSleep(1000)
 
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
+    local shopOpened = UTILS.SleepUntil(isOpen, 10, "Zamorak Mage shop open")
+    if not shopOpened then return end
+
+    local Items = {0, 1, 2, 3, 4, 5, 6, 7}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
     end
-        if not isOpen() then return end
-    
-        local Items = {0, 1, 2, 3, 4, 5, 6, 7}
-        for _, Runes in ipairs(Items) do
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
-        end 
-       API.KeyboardPress("Esc", 0, 50)
-       UTILS.randomSleep(1000) 
+
     SHOP_STATUS.ZamorakMage = false
 end
 
@@ -393,17 +325,21 @@ local function BuyMagebank()
     UTILS.randomSleep(4000)
     Interact:Object("Lever", "Pull")
     UTILS.randomSleep(2000)
-   
-    while not API.PInArea(3154, 5, 3924, 5, 0) do
-        UTILS.randomSleep(1000) 
-    end
-    UTILS.randomSleep(1000) 
+
+    local leverCrossed = UTILS.SleepUntil(function()
+        return API.PInArea(3154, 5, 3924, 5, 0)
+    end, 10, "Crossed lever")
+
+    if not leverCrossed then return end
+
+    UTILS.randomSleep(1000)
     clickRandomTile(3158, 3948, 2)
     UTILS.countTicks(3)
     UTILS.surge()
     clickRandomTile(3158, 3948, 2)
     Interact:Object("Web", "Slash")
     UTILS.randomSleep(5000)
+
     clickRandomTile(3120, 3957, 2)
     UTILS.countTicks(3)
     UTILS.surge()
@@ -412,31 +348,31 @@ local function BuyMagebank()
     UTILS.surge()
     clickRandomTile(3094, 3958, 1)
     UTILS.randomSleep(9000)
-    API.DoAction_Object2(0x29,API.OFF_ACT_GeneralObject_route0,{ 64729 },50,WPOINT.new(3094,3958,0));
+
+    API.DoAction_Object2(0x29, API.OFF_ACT_GeneralObject_route0, {64729}, 50, WPOINT.new(3094, 3958, 0))
     UTILS.randomSleep(3000)
-    API.DoAction_Object2(0x29,API.OFF_ACT_GeneralObject_route0,{ 64729 },50,WPOINT.new(3091,3958,0));
+    API.DoAction_Object2(0x29, API.OFF_ACT_GeneralObject_route0, {64729}, 50, WPOINT.new(3091, 3958, 0))
     UTILS.randomSleep(3000)
+
     Interact:Object("Lever", "Pull")
-    while not API.PInArea(2539, 5, 4712, 5, 0) do
-        UTILS.randomSleep(1000) 
-    end
-    Interact:NPC("Lundail", "Trade")    
+
+    local leverCrossedAgain = UTILS.SleepUntil(function()
+        return API.PInArea(2539, 5, 4712, 5, 0)
+    end, 10, "Crossed second lever")
+
+    if not leverCrossedAgain then return end
+
+    Interact:NPC("Lundail", "Trade")
     UTILS.randomSleep(1000)
 
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
+    local shopOpened = UTILS.SleepUntil(isOpen, 10, "Magebank shop open")
+    if not shopOpened then return end
 
-    if not isOpen() then return end
-    
-         local Items = {0, 1, 2, 3, 4, 5, 6, 7,8,9,10}
-        for _, Runes in ipairs(Items) do
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
-        end 
-       API.KeyboardPress("Esc", 0, 50)
-            UTILS.randomSleep(1000) 
+    local Items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
+    end
     SHOP_STATUS.Magebank = false
 end
 
@@ -456,24 +392,19 @@ local function BuyOoglog()
     clickRandomTile(2560, 2849, 2)
     UTILS.randomSleep(3000)
     UTILS.surge()
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 7056 },50)
-    --Interact:NPC("Chargurr", "Trade", 30)
+    --API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 7056 },50)
+    Interact:NPC("Chargurr", "Trade")
     UTILS.randomSleep(3000)
 
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
+    local shopOpened = UTILS.SleepUntil(isOpen, 10, "Ooglog shop open")
+    if not shopOpened then return end
+
+    local Items = {0, 1, 2}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
     end
 
-      if not isOpen() then return end
-    
-         local Items = {0, 1, 2}
-        for _, Runes in ipairs(Items) do
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
-        end
-        API.KeyboardPress("Esc", 0, 50)
-            UTILS.randomSleep(1000)
     SHOP_STATUS.Ooglog = false
 end
 
@@ -485,12 +416,9 @@ local function Redsandstone()
     UTILS.countTicks(1)
     UTILS.surge()
     clickRandomTile(2586, 2878, 2)
-    UTILS.dive(randomizeDiveCoordinates(2558, 2879, 0, 1))
-    clickRandomTile(2586, 2878, 2)
-    UTILS.countTicks(2)
+    UTILS.countTicks(5)
     UTILS.surge()
-    clickRandomTile(2586, 2878, 2)
-    
+    UTILS.dive(randomizeDiveCoordinates(2586, 2878, 0, 2))
     API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
     API.RandomSleep2(600, 600, 600)
     API.WaitUntilMovingEnds()
@@ -513,7 +441,6 @@ local function Crystalsandstone()
     UTILS.countTicks(1)
     UTILS.surge()
     clickRandomTile(2144, 3351, 1)
-
     API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
     API.RandomSleep2(600, 600, 600)
     API.WaitUntilMovingEnds()
@@ -528,122 +455,98 @@ local function TaverlyHerb()
     clickRandomTile(2876, 3417, 2)
     UTILS.countTicks(3)
     UTILS.surge()
-    API.DoAction_Object1(0x5,API.OFF_ACT_GeneralObject_route1,{ 66666 },50);
-    
-    while not API.BankOpen2() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
+    API.DoAction_Object1(0x5, API.OFF_ACT_GeneralObject_route1, {66666}, 50)
+    local bankOpened = UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
+    if bankOpened then 
+        API.KeyboardPress("3", 0, 50)
     end
-
-    if API.BankOpen2() then 
-         API.KeyboardPress("3", 0, 50)
-    end
-
-    clickRandomTile(2922,3429,2)
+    clickRandomTile(2922, 3429, 2)
     UTILS.countTicks(2)
     UTILS.surge()
-    clickRandomTile(2922,3429,2)
-    UTILS.countTicks(4)
+    clickRandomTile(2922, 3429, 2)
+    UTILS.countTicks(5)
     UTILS.surge()
-    clickRandomTile(2922,3429,2)
-    UTILS.dive(randomizeDiveCoordinates(2922, 3429, 0, 2))
+    clickRandomTile(2922, 3429, 2)
+    UTILS.dive(randomizeDiveCoordinates(2921, 3431, 0, 1))
     UTILS.countTicks(1)
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route4,{ 14854 },50)
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route4, {14854}, 50)
 
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
-
-      if not isOpen() then return end
+    local shopOpened = UTILS.SleepUntil(isOpen, 10, "Taverly Herb shop open")
+    if not shopOpened then return end
     
-         local Items = {3, 4, 5, 7, 8, 9, 10}
-        for _, Runes in ipairs(Items) do
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
-        end
-        API.KeyboardPress("Esc", 0, 50)
-            UTILS.randomSleep(1000)
+    local Items = {3, 4, 5, 7, 8, 9, 10}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
+    end
     SHOP_STATUS.TaverlyHerb = false
 end
 
 local function FortHerbshop()
     LODESTONES.FORT_FORINTHRY.Teleport()
-    clickRandomTile(3297,3568,1)    
+    clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(3)
     UTILS.surge()
-    clickRandomTile(3297,3568,1)
+    clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(3)
     UTILS.surge()
-    clickRandomTile(3297,3568,1)
+    clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(1)
-    API.DoAction_Object1(0x2e,API.OFF_ACT_GeneralObject_route1,{ 125115 },50);
+    API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {125115}, 50)
 
-    while not API.BankOpen2() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
+    UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
 
     if API.BankOpen2() then 
-         API.KeyboardPress("3", 0, 50)
+        API.KeyboardPress("3", 0, 50)
     end
 
-   API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 26134 },50)
-   API.RandomSleep2(300, 500, 600)
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {26134}, 50)
+    API.RandomSleep2(300, 500, 600)
 
-   while not isOpen() and elapsedTime < maxWaitTime do
-    UTILS.randomSleep(waitInterval * 1000)
-    elapsedTime = elapsedTime + waitInterval
-end
+    UTILS.SleepUntil(isOpen, 10, "Fort Herb shop open")
 
-  if not isOpen() then return end
+    if not isOpen() then return end
 
-     local Items = {3, 4, 5, 7, 8, 9}
+    local Items = {3, 4, 5, 7, 8, 9}
     for _, Runes in ipairs(Items) do
         API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
         API.RandomSleep2(100, 200, 300)
     end
-    API.DoAction_Object1(0x2e,API.OFF_ACT_GeneralObject_route1,{ 125115 },50);
+
+    API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {125115}, 50)
     API.RandomSleep2(300, 500, 600)
-    
-    while not API.BankOpen2() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
+
+    UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
 
     if API.BankOpen2() then 
-         API.KeyboardPress("3", 0, 50)
+        API.KeyboardPress("3", 0, 50)
     end
 
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 26134 },50)
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {26134}, 50)
     API.RandomSleep2(300, 500, 600)
 
-    while not isOpen() and elapsedTime < maxWaitTime do
-     UTILS.randomSleep(waitInterval * 1000)
-     elapsedTime = elapsedTime + waitInterval
- end
- 
-   if not isOpen() then return end
- 
-      local Items = {10}
-     for _, Runes in ipairs(Items) do
-         API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-         API.RandomSleep2(100, 200, 300)
-     end
-     API.DoAction_Object1(0x2e,API.OFF_ACT_GeneralObject_route1,{ 125115 },50);
-     API.RandomSleep2(300, 500, 600)
-    
-     while not API.BankOpen2() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
- 
-     if API.BankOpen2() then 
-          API.KeyboardPress("3", 0, 50)
-     end
+    UTILS.SleepUntil(isOpen, 10, "Fort Herb shop open")
 
-    SHOP_STATUS.FortHerbshop = false   
+    if not isOpen() then return end
+
+    local Items2 = {10}
+    for _, Runes in ipairs(Items2) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
+    end
+
+    API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {125115}, 50)
+    API.RandomSleep2(300, 500, 600)
+
+    UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
+
+    if API.BankOpen2() then 
+        API.KeyboardPress("3", 0, 50)
+    end
+
+    SHOP_STATUS.FortHerbshop = false
 end
+
 
 local function PriffherbShop()
     LODESTONES.PRIFDDINAS.Teleport()
@@ -654,37 +557,32 @@ local function PriffherbShop()
     UTILS.countTicks(3)
     UTILS.surge()
     clickRandomTile(2235, 3398, 2)
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 20285 },50)
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {20285}, 50)
     UTILS.randomSleep(4000)
 
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
+    UTILS.SleepUntil(isOpen, 10, "Priff Herb shop open")
+
+    if not isOpen() then return end
+
+    local Items = {4, 5, 6, 9, 10, 11, 12}
+    for _, Runes in ipairs(Items) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(100, 200, 300)
     end
 
-      if not isOpen() then return end
-    
-         local Items = {4, 5, 6,9, 10, 11,12}
-        for _, Runes in ipairs(Items) do
-            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
-        end
+    API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {92692}, 50)
 
-        API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {92692}, 50)
+    UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
 
-        while not API.BankOpen2() and elapsedTime < maxWaitTime do
-            UTILS.randomSleep(waitInterval * 1000)
-            elapsedTime = elapsedTime + waitInterval
-        end
-    
-        if API.BankOpen2() then
-            API.KeyboardPress("3", 0, 50)
-        end
-    
-        API.RandomSleep2(300, 500, 600)
-    
-        SHOP_STATUS.PriffherbShop = false
+    if API.BankOpen2() then
+        API.KeyboardPress("3", 0, 50)
+    end
+
+    API.RandomSleep2(300, 500, 600)
+
+    SHOP_STATUS.PriffherbShop = false
 end
+
 
 if API.CacheEnabled then
     print ("Cache is enabled, running the script.")
