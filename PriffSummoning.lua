@@ -121,13 +121,35 @@ end
 local function Bank()
     API.DoAction_Object1(0x33, API.OFF_ACT_GeneralObject_route3, { Bankchest }, 10)
     UTILS.randomSleep(2000 * 2)
+
     local shardCount = API.InvStackSize(Shards)
     local pouchCount = API.InvStackSize(Pouches)
-    if not API.InvFull_() or shardCount < 1000 or pouchCount < 25 or not hasEnoughCharms() then
-        print("Not enough supplies left. Stopping script.")
+    local charmsOk = hasEnoughCharms()
+
+    if not API.InvFull_() then
+        print("Inventory is not full. Stopping script.")
         ShouldContinue = false
         return
     end
+
+    if shardCount < 1000 then
+        print("Not enough Spirit Shards. Have: " .. shardCount)
+        ShouldContinue = false
+        return
+    end
+
+    if pouchCount < 25 then
+        print("Not enough Summoning Pouches. Have: " .. pouchCount)
+        ShouldContinue = false
+        return
+    end
+
+    if not charmsOk then
+        print("Not enough Charms.")
+        ShouldContinue = false
+        return
+    end
+
     currentState = states.TELEPORT_AMLODD
 end
 
