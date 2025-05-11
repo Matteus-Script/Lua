@@ -75,14 +75,25 @@ local function shouldBank()
     local inventoryItems = API.ReadInvArrays33()
     if not inventoryItems then return true end 
 
+    local hasArrowshafts = false
+    local hasFeathers = false
+
     for _, item in ipairs(inventoryItems) do
-        if item.textitem and (string.find(item.textitem, "(shaft)") or string.find(item.textitem, "(Headless)")) then
-            print("Found " .. item.textitem .. ", skipping bank reload.")
-            return false
+        if item.textitem then
+            if string.find(item.textitem, "(shaft)") then
+                hasArrowshafts = true
+            elseif string.find(item.textitem, "Feather") then
+                hasFeathers = true
+            end
         end
     end
 
-    return true  
+    if hasArrowshafts and hasFeathers then
+        print("Found arrowshafts and feathers, skipping bank reload.")
+        return false
+    end
+
+    return true
 end
 
 local function banking()
