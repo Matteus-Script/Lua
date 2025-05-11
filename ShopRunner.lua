@@ -238,7 +238,7 @@ local function BuyAlkharid()
     LODESTONES.AL_KHARID.Teleport()
     clickRandomTile(3300, 3211, 2)
     UTILS.countTicks(8)
-    UTILS.dive(randomizeDiveCoordinates(3300, 3211, 0, 2))
+    UTILS.dive(randomizeDiveCoordinates(3300, 3211, 0, 1))
 
     Interact:NPC("Ali Morrisane", "Trade")
 
@@ -388,12 +388,11 @@ local function BuyOoglog()
     UTILS.countTicks(4)
     UTILS.surge()
     UTILS.dive(randomizeDiveCoordinates(2560, 2849, 0, 2))
-    UTILS.surge()
     clickRandomTile(2560, 2849, 2)
     UTILS.randomSleep(3000)
     UTILS.surge()
-    --API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 7056 },50)
-    Interact:NPC("Chargurr", "Trade")
+    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 7056 },50)
+    --Interact:NPC("Chargurr", "Trade")
     UTILS.randomSleep(3000)
 
     local shopOpened = UTILS.SleepUntil(isOpen, 10, "Ooglog shop open")
@@ -498,6 +497,7 @@ local function FortHerbshop()
 
     if API.BankOpen2() then 
         API.KeyboardPress("3", 0, 50)
+        API.RandomSleep2(1000, 1000, 1000)
     end
 
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {26134}, 50)
@@ -520,6 +520,7 @@ local function FortHerbshop()
 
     if API.BankOpen2() then 
         API.KeyboardPress("3", 0, 50)
+        API.RandomSleep2(1000, 1000, 1000)
     end
 
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {26134}, 50)
@@ -542,6 +543,7 @@ local function FortHerbshop()
 
     if API.BankOpen2() then 
         API.KeyboardPress("3", 0, 50)
+        API.RandomSleep2(1000, 1000, 1000)
     end
 
     SHOP_STATUS.FortHerbshop = false
