@@ -128,8 +128,6 @@ local function banking()
     end
 end
 
-
-
 local function banking2()
     API.DoAction_NPC(0x5, API.OFF_ACT_InteractNPC_route, { 21393 }, 50)
     UTILS.countTicks(1)
@@ -147,28 +145,25 @@ local function Buypotions()
 
     print("Opening the shop to buy potions...")
     while API.CheckAnim(50) or API.ReadPlayerMovin2() or API.isProcessing() do
-        UTILS.randomSleep(1000)
+        UTILS.randomSleep(100)
     end
 
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, { 21393 }, 50)
-    UTILS.randomSleep(1000)
-
-    local maxWaitTime = 10
-    local elapsedTime = 0
-    local waitInterval = 0.5
-
-    while not isOpen() and elapsedTime < maxWaitTime do
-        UTILS.randomSleep(waitInterval * 1000)
-        elapsedTime = elapsedTime + waitInterval
-    end
+   
+    UTILS.SleepUntil(isOpen, 10, "shop to open")
 
     if not isOpen() then return end
 
     local potions = { 1, 3, 4, 5, 6, 7, 8 }
     for _, potion in ipairs(potions) do
+    if potion == 1 then
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, potion, API.OFF_ACT_GeneralInterface_route)
+    else
         API.DoAction_Interface(0xffffffff, 0xffffffff, 2, 1265, 20, potion, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
     end
+    API.RandomSleep2(100, 200, 300)
+end
+
 
     print("Potion buying completed.")
 end
@@ -285,7 +280,7 @@ local function checkForVialOrUnfItems()
             string.find(item.textitem, "stick") or
             string.find(item.textitem, "milk")
         ) then
-            local cleanedName = string.gsub(item.textitem, "<.->", "") -- remove tags
+            local cleanedName = string.gsub(item.textitem, "<.->", "")
             print("Found item: " .. cleanedName .. " (" .. item.itemid1 .. ")")
 
             if not added[item.itemid1] and item.itemid1 > 0 then
@@ -295,7 +290,6 @@ local function checkForVialOrUnfItems()
         end
     end
 end
-
 
 local function performCraftingAction()
     local unfItem, itemName = checkForVialOrUnfItems()
@@ -351,8 +345,6 @@ local function performCraftingAction()
     end
 end
 
-
-
 while API.Read_LoopyLoop(true) and ShouldContinue do
     checkXpIncrease()
 
@@ -376,7 +368,7 @@ while API.Read_LoopyLoop(true) and ShouldContinue do
             API.DoRandomEvents()
 
             while API.CheckAnim(50) or API.ReadPlayerMovin2() or API.isProcessing() do
-                UTILS.randomSleep(1000)
+                UTILS.randomSleep(100)
                 API.DoRandomEvents()
             end
 
