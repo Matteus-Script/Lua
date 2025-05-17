@@ -29,7 +29,7 @@ local lastPotionTime = 0
 local lastCycleTime = os.time()
 local bankingStateCalls = 0
 local firstLoop = true
-local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC", "DIVINATION", "PRAYER", "FIREMAKING"}
+local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC", "DIVINATION", "PRAYER", "FIREMAKING", "COOKING"}
 local startXp = {}
 local lastXpTime = os.time()
 
@@ -214,11 +214,12 @@ local function useCleanOnSuper()
                                   string.find(item.textitem, "Grenwall") or 
                                   string.find(item.textitem, "Phoenix") or 
                                   string.find(item.textitem, "Papaya") or
+                                  string.find(item.textitem, "Jug") or
                                   string.find(item.textitem, "++")) then
             cleanItem = item.itemid1
             itemCounts[item.textitem] = (itemCounts[item.textitem] or 0) + 1
             itemIDs[item.textitem] = item.itemid1
-        elseif item.textitem and (string.find(item.textitem, "(3)") or string.find(item.textitem, "berries")) then
+        elseif item.textitem and (string.find(item.textitem, "(3)") or string.find(item.textitem, "berries") or string.find(item.textitem, "Grapes")) then
             superItem = item.itemid1
             table.insert(foundItems, "Super item: " .. item.textitem)
         end
