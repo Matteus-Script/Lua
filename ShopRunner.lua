@@ -126,13 +126,13 @@ local function buyMagesGuild()
     UTILS.surge()
     API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
 
-    local insideGuild = UTILS.SleepUntil(inMagesGuild, 10, "entering Mage Guild")
+    local insideGuild = UTILS.SleepUntil(inMagesGuild, 20, "entering Mage Guild")
     if not insideGuild then return end
 
     API.DoAction_Object1(0x34, API.OFF_ACT_GeneralObject_route0, {1722}, 50)
     UTILS.countTicks(3)
 
-    local atShop = UTILS.SleepUntil(isAtShop, 10, "reaching Mage Guild shop")
+    local atShop = UTILS.SleepUntil(isAtShop, 20, "reaching Mage Guild shop")
     if not atShop then return end
 
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {461}, 50)
