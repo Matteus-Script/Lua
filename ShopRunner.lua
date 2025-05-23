@@ -227,7 +227,7 @@ local function BuyVarrock()
 
     local Items = {0, 1, 2, 3, 4, 5, 6, 7}
     for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        
         API.RandomSleep2(100, 200, 300)
     end
     SHOP_STATUS.Varrock = false
@@ -458,6 +458,7 @@ local function TaverlyHerb()
     local bankOpened = UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
     if bankOpened then 
         API.KeyboardPress("3", 0, 50)
+        API.RandomSleep2(600, 600, 600)
     end
     clickRandomTile(2922, 3429, 2)
     UTILS.countTicks(2)
