@@ -227,7 +227,9 @@ local function BuyVarrock()
 
     local Items = {0, 1, 2, 3, 4, 5, 6, 7}
     for _, Runes in ipairs(Items) do
-        
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
+        API.DoAction_Interface(0xffffffff,0xffffffff,7,1265,14,0,API.OFF_ACT_GeneralInterface_route2)
+        API.DoAction_Interface(0xffffffff,0xffffffff,7,1265,14,1,API.OFF_ACT_GeneralInterface_route2)
         API.RandomSleep2(100, 200, 300)
     end
     SHOP_STATUS.Varrock = false
