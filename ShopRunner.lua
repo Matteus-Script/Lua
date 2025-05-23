@@ -26,6 +26,27 @@ local function isOpen()
     return API.Compare2874Status(40, false) or API.Compare2874Status(18, false)
 end
 
+local function OpenDoor(openDoorID, openX, openY, closedDoorID, closedX, closedY)
+    local openPoint = WPOINT.new(openX, openY, 0)
+    local closedPoint = WPOINT.new(closedX, closedY, 0)
+    local openDoorCount = #API.GetAllObjArray2({openDoorID}, 5, {0}, openPoint)
+    local startTime = os.time()
+    if openDoorCount == 0 then
+        API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {closedDoorID}, 5)
+
+        while API.Read_LoopyLoop() and openDoorCount == 0 and (os.time() - startTime) < 5 do
+            UTILS.randomSleep(100)
+            openDoorCount = #API.GetAllObjArray2({openDoorID}, 5, {0}, openPoint)
+        end
+    end
+
+    if openDoorCount > 0 then
+        return true
+    end
+
+    return false
+end
+
 local SHOP_STATUS = {
     Lunar = true,
     Yannile = true,
@@ -126,13 +147,13 @@ local function buyMagesGuild()
     UTILS.surge()
     API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
 
-    local insideGuild = UTILS.SleepUntil(inMagesGuild, 20, "entering Mage Guild")
+    local insideGuild = UTILS.SleepUntil(inMagesGuild, 10, "entering Mage Guild")
     if not insideGuild then return end
 
     API.DoAction_Object1(0x34, API.OFF_ACT_GeneralObject_route0, {1722}, 50)
     UTILS.countTicks(3)
 
-    local atShop = UTILS.SleepUntil(isAtShop, 20, "reaching Mage Guild shop")
+    local atShop = UTILS.SleepUntil(isAtShop, 10, "reaching Mage Guild shop")
     if not atShop then return end
 
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {461}, 50)
@@ -158,8 +179,7 @@ local function BuySarim()
     UTILS.surge()
     clickRandomTile(3018, 3259, 1)
     UTILS.countTicks(8)
-    Interact:Object("Door", "Open") 
-    UTILS.randomSleep(4000)
+    OpenDoor(40109, 3016, 3259, 40108, 3017, 3259)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {583}, 50)
     UTILS.randomSleep(1000)
 
@@ -216,8 +236,7 @@ local function BuyVarrock()
 
     if not reachedShop then return end
 
-    Interact:Object("Door", "Open", 3)
-    UTILS.randomSleep(3000)
+    OpenDoor(24383, 3253, 3399, 24384, 3253, 3398)
 
     Interact:NPC("Aubury", "Trade", 8)
     UTILS.randomSleep(1000)
@@ -225,16 +244,20 @@ local function BuyVarrock()
     local opened = UTILS.SleepUntil(isOpen, 10, "Varrock rune shop open")
     if not opened then return end
 
-    local Items = {0, 1, 2, 3, 4, 5, 6, 7}
-    for _, Runes in ipairs(Items) do
+    local ItemsRoute1 = {0, 1, 2, 3, 4, 5, 6, 7}
+    for _, Runes in ipairs(ItemsRoute1) do
         API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.DoAction_Interface(0xffffffff,0xffffffff,7,1265,14,0,API.OFF_ACT_GeneralInterface_route2)
-        API.DoAction_Interface(0xffffffff,0xffffffff,7,1265,14,1,API.OFF_ACT_GeneralInterface_route2)
         API.RandomSleep2(100, 200, 300)
     end
+
+    local ItemsRoute2 = {0, 1}
+    for _, Runes in ipairs(ItemsRoute2) do
+        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 14, Runes, API.OFF_ACT_GeneralInterface_route2)
+        API.RandomSleep2(100, 200, 300)
+    end
+
     SHOP_STATUS.Varrock = false
 end
-
 
 local function BuyAlkharid()
     LODESTONES.AL_KHARID.Teleport()
