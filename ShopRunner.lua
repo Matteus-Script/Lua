@@ -29,22 +29,18 @@ end
 local function OpenDoor(openDoorID, openX, openY, closedDoorID, closedX, closedY)
     local openPoint = WPOINT.new(openX, openY, 0)
     local closedPoint = WPOINT.new(closedX, closedY, 0)
-    local openDoorCount = #API.GetAllObjArray2({openDoorID}, 5, {0}, openPoint)
-    local startTime = os.time()
-    if openDoorCount == 0 then
+
+    local function isDoorOpen()
+        local count = #API.GetAllObjArray2({openDoorID}, 5, {0}, openPoint)
+        return count > 0
+    end
+
+    if not isDoorOpen() then
         API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {closedDoorID}, 5)
-
-        while API.Read_LoopyLoop() and openDoorCount == 0 and (os.time() - startTime) < 5 do
-            UTILS.randomSleep(100)
-            openDoorCount = #API.GetAllObjArray2({openDoorID}, 5, {0}, openPoint)
-        end
+        UTILS.SleepUntil(isDoorOpen, 5, "Waiting for door to open")
     end
 
-    if openDoorCount > 0 then
-        return true
-    end
-
-    return false
+    return isDoorOpen()
 end
 
 local SHOP_STATUS = {
