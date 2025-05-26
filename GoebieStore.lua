@@ -2,12 +2,14 @@
 # Script Name:   <GoebieStore>
 # Description:   <Makes potions and buys supplies from the Goebie store>
 # Author:        <Matteus>
-# Version:       <1.1>
+# Version:       <1.11>
 # Date:          <2025.03.24>
 --]]
 
 --[[v1.10 - 31-03-2025
     - Added Fletching methods ( Logs>Unstrung>Bows) (logs>shafts>Headless>Arrows). -- note if crafting unstrung or shafts from logs make sure you make 1 first yourself so it remembers last made item 
+    v1.11 - 26-05-2025 
+    - Added Elidinis book support and some other small changes
 ]]--
 
 local API = require("api")
@@ -63,6 +65,10 @@ local function isOpen()
     return API.Compare2874Status(40, false) or API.Compare2874Status(18, false)
 end
 
+local function isBankopen()
+    return API.Compare2874Status(24, false)
+end
+
 local function waitCraftingInterface()
     for _ = 1, 50 do
         if isOpen() then return true end
@@ -100,11 +106,12 @@ local function banking()
     if not shouldBank() then return end
 
     API.DoAction_NPC(0x5, API.OFF_ACT_InteractNPC_route, { 21393 }, 50)
-    UTILS.countTicks(1)
-    if API.BankOpen2 then
+    UTILS.SleepUntil(isBankopen, 10, "Bank open")
+
+    if isBankopen() then 
+        API.RandomSleep2(100, 50, 50)
         API.KeyboardPress("1", 0, 50)
     end
-    UTILS.countTicks(2)
 
     local inventoryItems = API.ReadInvArrays33()
     local uniqueItems = {}
@@ -130,10 +137,12 @@ end
 
 local function banking2()
     API.DoAction_NPC(0x5, API.OFF_ACT_InteractNPC_route, { 21393 }, 50)
-    UTILS.countTicks(1)
-    if API.BankOpen2 then
+    UTILS.SleepUntil(isBankopen, 30, "Bank open")
+
+    if isBankopen() then
+        API.RandomSleep2(100, 50, 50)
         API.KeyboardPress("3", 0, 50)
-    end
+     end
 end
 
 local function Buypotions()
@@ -144,25 +153,25 @@ local function Buypotions()
     banking2()
 
     print("Opening the shop to buy potions...")
-    while API.CheckAnim(50) or API.ReadPlayerMovin2() or API.isProcessing() do
-        UTILS.randomSleep(100)
-    end
+    UTILS.SleepUntil(function()
+        return not (API.isProcessing())
+    end, 10, "wait for player idle before shop")
 
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, { 21393 }, 50)
    
-    UTILS.SleepUntil(isOpen, 10, "shop to open")
+    UTILS.SleepUntil(isOpen, 30, "shop to open")
 
     if not isOpen() then return end
 
     local potions = { 1, 3, 4, 5, 6, 7, 8 }
     for _, potion in ipairs(potions) do
-    if potion == 1 then
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, potion, API.OFF_ACT_GeneralInterface_route)
-    else
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 2, 1265, 20, potion, API.OFF_ACT_GeneralInterface_route)
+        if potion == 1 then
+            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, potion, API.OFF_ACT_GeneralInterface_route)
+        else
+            API.DoAction_Interface(0xffffffff, 0xffffffff, 2, 1265, 20, potion, API.OFF_ACT_GeneralInterface_route)
+        end
+        API.RandomSleep2(100, 200, 300)
     end
-    API.RandomSleep2(100, 200, 300)
-end
 
 
     print("Potion buying completed.")
@@ -215,6 +224,8 @@ local function useCleanOnSuper()
                                   string.find(item.textitem, "Phoenix") or 
                                   string.find(item.textitem, "Papaya") or
                                   string.find(item.textitem, "Jug") or
+                                  string.find(item.textitem, "crystal") or
+                                  string.find(item.textitem, "Wine") or
                                   string.find(item.textitem, "++")) then
             cleanItem = item.itemid1
             itemCounts[item.textitem] = (itemCounts[item.textitem] or 0) + 1
@@ -316,6 +327,11 @@ local function performCraftingAction()
         return
     end
 
+    if itemName:find("grimy") then
+        API.DoAction_Interface(0xffffffff,0x85db,3,1464,15,1,API.OFF_ACT_GeneralInterface_route)
+        return
+    end
+
     if itemName:find("miasma rune") or
        itemName:find("mud rune") or
        itemName:find("unicorn horn") or
@@ -346,8 +362,70 @@ local function performCraftingAction()
     end
 end
 
+local function clickRandomTile(baseX, baseY, range)
+    local offsetX = math.random(-range, range)
+    local offsetY = math.random(-range, range)
+    local randomTile = WPOINT.new(baseX + offsetX, baseY + offsetY, 0)
+    API.DoAction_Tile(randomTile)
+end
+
+local function DO_ElidinisSouls()
+    -- Lost Soul
+    if #API.ReadAllObjectsArray({1},{17720},{}) > 0 then
+        print("Found Lost Soul, interacting")
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17720}, 50, true, 0)
+        API.RandomSleep2(1500, 550, 650)
+    end
+
+    -- Unstable Soul
+    if #API.ReadAllObjectsArray({1},{17739},{}) > 0 then
+        print("Found Unstable Soul, interacting")
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17739}, 50, true, 0)
+        API.RandomSleep2(1500, 550, 650)
+    end
+
+    -- Mimicking Soul
+    if #API.ReadAllObjectsArray({1},{18222},{}) > 0 then
+        print("Found Mimicking Soul, interacting")
+        local soul = API.ReadAllObjectsArray({1},{18222},{})[1]
+        while soul ~= nil do 
+            API.DoAction_WalkerF(soul.Tile_XYZ)
+            API.RandomSleep2(1200, 550, 650)
+            soul = API.ReadAllObjectsArray({1},{18222},{})[1]
+        end
+        -- Wait for Lost Soul (17720) to appear, up to ~2 seconds
+        local waitCount = 0
+        while #API.ReadAllObjectsArray({1},{17720},{}) == 0 and waitCount < 20 do
+            API.RandomSleep2(100, 50, 50)
+            waitCount = waitCount + 1
+        end
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17720}, 50, true, 0)
+        API.RandomSleep2(1500, 550, 650)
+    end
+    -- Vengeful Soul
+    if #API.ReadAllObjectsArray({1},{17802},{}) > 0 then
+        print("Found Vengeful Soul running away")
+        clickRandomTile(4397, 810, 2)
+        --API.DoAction_Tile(WPOINT.new(4390,799,0))
+        while #API.ReadAllObjectsArray({1},{17802},{}) > 0 do 
+            API.RandomSleep2(50, 0, 0)
+        end
+    end
+end
+
 while API.Read_LoopyLoop(true) and ShouldContinue do
     checkXpIncrease()
+    local function soulsExist()
+        return #API.ReadAllObjectsArray({1},{17720},{}) > 0 or
+               #API.ReadAllObjectsArray({1},{17739},{}) > 0 or
+               #API.ReadAllObjectsArray({1},{18222},{}) > 0 or
+               #API.ReadAllObjectsArray({1},{17802},{}) > 0
+    end
+
+    while soulsExist() do
+        DO_ElidinisSouls()
+        UTILS.randomSleep(200)
+    end
 
     if bankingStateCalls >= 2 then
         ShouldContinue = false
@@ -368,9 +446,10 @@ while API.Read_LoopyLoop(true) and ShouldContinue do
             performCraftingAction()
             API.DoRandomEvents()
 
-            while API.CheckAnim(50) or API.ReadPlayerMovin2() or API.isProcessing() do
+            while API.isProcessing() do
                 UTILS.randomSleep(100)
                 API.DoRandomEvents()
+                DO_ElidinisSouls()
             end
 
             currentState = states.BuyingPotions
