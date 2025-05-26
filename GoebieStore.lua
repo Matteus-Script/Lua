@@ -129,7 +129,7 @@ local function banking()
         uniqueItemCount = uniqueItemCount + 1
     end
 
-    if uniqueItemCount < 1 then
+    if uniqueItemCount < 0 then
         print("Error: Less than two different items found after banking. Stopping script.")
         ShouldContinue = false
     end
