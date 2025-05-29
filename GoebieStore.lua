@@ -39,6 +39,13 @@ for _, skill in ipairs(trackedSkill) do
     startXp[skill] = API.GetSkillXP(skill) or 0
 end
 
+local function clickRandomTile(baseX, baseY, range)
+    local offsetX = math.random(-range, range)
+    local offsetY = math.random(-range, range)
+    local randomTile = WPOINT.new(baseX + offsetX, baseY + offsetY, 0)
+    API.DoAction_Tile(randomTile)
+end
+
 local function checkXpIncrease()
     local xpGained = false
 
@@ -100,6 +107,108 @@ local function shouldBank()
     end
 
     return true
+end
+
+local function canDive()
+    local dive = API.GetABs_name("Dive")
+    if dive.cooldown_timer < 1 and dive.enabled == true then return true
+    else return false end
+end
+
+local function getEscapeTile(player, soul, distance)
+    local dx = player.x - soul.Tile_XYZ.x
+    local dy = player.y - soul.Tile_XYZ.y
+    local mag = math.sqrt(dx * dx + dy * dy)
+    if mag == 0 then return nil end 
+    dx = dx / mag * distance
+    dy = dy / mag * distance
+    return WPOINT.new(math.floor(player.x + dx), math.floor(player.y + dy), player.z)
+end
+
+local function DO_ElidinisSouls()
+    -- Lost Soul
+    if #API.ReadAllObjectsArray({1}, {17720}, {}) > 0 then
+        print("Found Lost Soul, interacting")
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17720}, 50, true, 0)
+        API.RandomSleep2(1500, 550, 650)
+
+        while #API.ReadAllObjectsArray({1}, {17720}, {}) > 0 do
+            API.RandomSleep2(200, 50, 50)
+        end
+    end
+
+    -- Unstable Soul
+    if #API.ReadAllObjectsArray({1}, {17739}, {}) > 0 then
+        print("Found Unstable Soul, interacting")
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17739}, 50, true, 0)
+        API.RandomSleep2(1500, 550, 650)
+
+        while #API.ReadAllObjectsArray({1}, {17739}, {}) > 0 do
+            API.RandomSleep2(200, 50, 50)
+        end
+    end
+
+    -- Mimicking Soul
+    if #API.ReadAllObjectsArray({1}, {18222}, {}) > 0 then
+        print("Found Mimicking Soul, diving directly on its tile...")
+        local mimicSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
+        while mimicSoul ~= nil do
+            local tile = mimicSoul.Tile_XYZ
+            if canDive() then
+                print("Dive is ready — executing dive.")
+                API.DoAction_Dive_Tile(WPOINT.new(tile.x, tile.y, tile.z))
+            else
+                print("Dive not ready — walking instead.")
+                API.DoAction_Tile(WPOINT.new(tile.x, tile.y, tile.z))
+            end
+            API.RandomSleep2(1200, 550, 650)
+            mimicSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
+        end
+    end
+
+    -- Vengeful Soul
+    local soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
+    local initialRetreatDone = false
+
+    while soul do
+        local player = API.PlayerCoord()
+        local dx = soul.Tile_XYZ.x - player.x
+        local dy = soul.Tile_XYZ.y - player.y
+        local currentDist = math.sqrt(dx * dx + dy * dy)
+
+        if not initialRetreatDone and currentDist <= 15 then
+            print("Initial retreat: running far from Vengeful Soul...")
+            for attempt = 1, 10 do
+                local randX = math.random(-20, 20)
+                local randY = math.random(-20, 20)
+                local targetX = player.x + randX
+                local targetY = player.y + randY
+                local distFromSoul = math.sqrt((targetX - soul.Tile_XYZ.x)^2 + (targetY - soul.Tile_XYZ.y)^2)
+                if distFromSoul > 15 then
+                    API.DoAction_Tile(WPOINT.new(targetX, targetY, player.z))
+                    initialRetreatDone = true
+                    break
+                end
+            end
+            API.RandomSleep2(1800, 150, 150)
+
+        elseif currentDist <= 7 then
+            print("Vengeful Soul is close, intelligently dodging...")
+            local escapeTile = getEscapeTile(player, soul, 6)
+            if escapeTile then
+                API.DoAction_Tile(escapeTile)
+            else
+                local farTile = WPOINT.new(player.x + math.random(-20, 20), player.y + math.random(-20, 20), player.z)
+                API.DoAction_Tile(farTile)
+            end
+            API.RandomSleep2(1200, 100, 100)
+
+        else
+            API.RandomSleep2(300, 100, 100)
+        end
+
+        soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
+    end
 end
 
 local function banking()
@@ -177,19 +286,27 @@ local function Buypotions()
     print("Potion buying completed.")
 end
 
-local function handleCrafting(item1, item2, actionRoute1, actionRoute2, errorMessage)
+local function handleCrafting(item1, item2, actionRoute1, actionRoute2, errorMessage, skipWaitInterface)
     if item1 and item2 then
         API.DoAction_Inventory1(item1, 0, 0, actionRoute1)
         API.RandomSleep2(50, 30, 50)
         API.DoAction_Inventory1(item2, 0, 0, actionRoute2)
         API.RandomSleep2(400, 200, 250)
 
-        if waitCraftingInterface() then
+        if skipWaitInterface then
+            while API.isProcessing() do
+                UTILS.randomSleep(100)
+                API.DoRandomEvents()
+                DO_ElidinisSouls()
+            end
+            return true
+        elseif waitCraftingInterface() then
             API.KeyboardPress32(0x20, 0)
             UTILS.countTicks(5)
-            while API.CheckAnim(50) or API.ReadPlayerMovin2() or API.isProcessing() do
-                UTILS.randomSleep(1000)
+            while API.isProcessing() do
+                UTILS.randomSleep(100)
                 API.DoRandomEvents()
+                DO_ElidinisSouls()
             end
             return true
         else
@@ -210,6 +327,7 @@ local function useCleanOnSuper()
     local foundItems = {}
     local itemCounts = {} 
     local itemIDs = {}    
+    local skipWait = false
 
     for _, item in ipairs(inventoryItems) do
         if item.textitem == "Weapon poison++ (unf)" then
@@ -230,6 +348,10 @@ local function useCleanOnSuper()
             cleanItem = item.itemid1
             itemCounts[item.textitem] = (itemCounts[item.textitem] or 0) + 1
             itemIDs[item.textitem] = item.itemid1
+
+            if item.textitem:lower():find("clean torstol") then
+                skipWait = true
+            end
         elseif item.textitem and (string.find(item.textitem, "(3)") or string.find(item.textitem, "berries") or string.find(item.textitem, "Grapes")) then
             superItem = item.itemid1
             table.insert(foundItems, "Super item: " .. item.textitem)
@@ -248,12 +370,14 @@ local function useCleanOnSuper()
         return true
     end
 
-    if handleCrafting(cleanItem, superItem, API.OFF_ACT_Bladed_interface_route, API.OFF_ACT_GeneralInterface_route1, "Herblore interface not detected.") then
+    if handleCrafting(cleanItem, superItem, API.OFF_ACT_Bladed_interface_route, API.OFF_ACT_GeneralInterface_route1, "Herblore interface not detected.", skipWait) then
         return true
     end
 
     return false
 end
+
+
 
 local function checkForVialOrUnfItems()
     local inventoryItems = API.ReadInvArrays33()
@@ -269,7 +393,7 @@ local function checkForVialOrUnfItems()
 
         if item.textitem and (
             string.find(item.textitem, "Grimy") or 
-            string.find(item.textitem, "Vial") or
+            string.find(item.textitem, "water") or
             string.find(item.textitem, "(unf)") or 
             string.find(item.textitem, "flask") or
             string.find(item.textitem, "shaft") or
@@ -362,57 +486,6 @@ local function performCraftingAction()
     end
 end
 
-local function clickRandomTile(baseX, baseY, range)
-    local offsetX = math.random(-range, range)
-    local offsetY = math.random(-range, range)
-    local randomTile = WPOINT.new(baseX + offsetX, baseY + offsetY, 0)
-    API.DoAction_Tile(randomTile)
-end
-
-local function DO_ElidinisSouls()
-    -- Lost Soul
-    if #API.ReadAllObjectsArray({1},{17720},{}) > 0 then
-        print("Found Lost Soul, interacting")
-        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17720}, 50, true, 0)
-        API.RandomSleep2(1500, 550, 650)
-    end
-
-    -- Unstable Soul
-    if #API.ReadAllObjectsArray({1},{17739},{}) > 0 then
-        print("Found Unstable Soul, interacting")
-        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17739}, 50, true, 0)
-        API.RandomSleep2(1500, 550, 650)
-    end
-
-    -- Mimicking Soul
-    if #API.ReadAllObjectsArray({1},{18222},{}) > 0 then
-        print("Found Mimicking Soul, interacting")
-        local soul = API.ReadAllObjectsArray({1},{18222},{})[1]
-        while soul ~= nil do 
-            API.DoAction_WalkerF(soul.Tile_XYZ)
-            API.RandomSleep2(1200, 550, 650)
-            soul = API.ReadAllObjectsArray({1},{18222},{})[1]
-        end
-        -- Wait for Lost Soul (17720) to appear, up to ~2 seconds
-        local waitCount = 0
-        while #API.ReadAllObjectsArray({1},{17720},{}) == 0 and waitCount < 20 do
-            API.RandomSleep2(100, 50, 50)
-            waitCount = waitCount + 1
-        end
-        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17720}, 50, true, 0)
-        API.RandomSleep2(1500, 550, 650)
-    end
-    -- Vengeful Soul
-    if #API.ReadAllObjectsArray({1},{17802},{}) > 0 then
-        print("Found Vengeful Soul running away")
-        clickRandomTile(4397, 810, 2)
-        --API.DoAction_Tile(WPOINT.new(4390,799,0))
-        while #API.ReadAllObjectsArray({1},{17802},{}) > 0 do 
-            API.RandomSleep2(50, 0, 0)
-        end
-    end
-end
-
 while API.Read_LoopyLoop(true) and ShouldContinue do
     checkXpIncrease()
     local function soulsExist()
@@ -435,6 +508,7 @@ while API.Read_LoopyLoop(true) and ShouldContinue do
     if currentState == states.Banking then
         bankingStateCalls = bankingStateCalls + 1
         banking()
+        
         currentState = states.Crafting
 
     elseif currentState == states.Crafting then
