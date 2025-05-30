@@ -126,64 +126,69 @@ local function getEscapeTile(player, soul, distance)
 end
 
 local function DO_ElidinisSouls()
-    -- Lost Soul
-    if #API.ReadAllObjectsArray({1}, {17720}, {}) > 0 then
-        print("Found Lost Soul, interacting")
-        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17720}, 50, true, 0)
-        API.RandomSleep2(1500, 550, 650)
+    while true do
+        local foundSomething = false
 
-        while #API.ReadAllObjectsArray({1}, {17720}, {}) > 0 do
-            API.RandomSleep2(200, 50, 50)
+        -- Lost Soul
+        if #API.ReadAllObjectsArray({1}, {17720}, {}) > 0 then
+            foundSomething = true
+            print("Found Lost Soul, interacting")
+            API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17720}, 50, true, 0)
+            API.RandomSleep2(1500, 550, 650)
+            while #API.ReadAllObjectsArray({1}, {17720}, {}) > 0 do
+                API.RandomSleep2(200, 50, 50)
+            end
         end
-    end
 
-    -- Unstable Soul
-    if #API.ReadAllObjectsArray({1}, {17739}, {}) > 0 then
-        print("Found Unstable Soul, interacting")
-        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17739}, 50, true, 0)
-        API.RandomSleep2(1500, 550, 650)
-
-        while #API.ReadAllObjectsArray({1}, {17739}, {}) > 0 do
-            API.RandomSleep2(200, 50, 50)
+        -- Unstable Soul
+        if #API.ReadAllObjectsArray({1}, {17739}, {}) > 0 then
+            foundSomething = true
+            print("Found Unstable Soul, interacting")
+            API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17739}, 50, true, 0)
+            API.RandomSleep2(1500, 550, 650)
+            while #API.ReadAllObjectsArray({1}, {17739}, {}) > 0 do
+                API.RandomSleep2(200, 50, 50)
+            end
         end
-    end
 
-    -- Mimicking Soul
-    if #API.ReadAllObjectsArray({1}, {18222}, {}) > 0 then
-        print("Found Mimicking Soul, diving directly on its tile...")
+        -- Mimicking Soul
         local mimicSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
-        while mimicSoul ~= nil do
+        if mimicSoul then
+            foundSomething = true
+            print("Found Mimicking Soul, diving or walking to its tile once...")
             local tile = mimicSoul.Tile_XYZ
             if canDive() then
                 print("Dive is ready — executing dive.")
                 API.DoAction_Dive_Tile(WPOINT.new(tile.x, tile.y, tile.z))
+                API.RandomSleep2(1200, 550, 650)
             else
-                print("Dive not ready — walking instead.")
+                print("Dive not ready or failed — walking instead.")
                 API.DoAction_Tile(WPOINT.new(tile.x, tile.y, tile.z))
+                API.RandomSleep2(1200, 550, 650)
             end
-            API.RandomSleep2(1200, 550, 650)
-            mimicSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
+            while API.ReadAllObjectsArray({1}, {18222}, {})[1] do
+                API.RandomSleep2(200, 50, 50)
+            end
         end
-    end
 
-    -- Vengeful Soul
-    local soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
-    local initialRetreatDone = false
+       -- Vengeful Soul
+        local soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
+        local initialRetreatDone = false
 
-    while soul do
+        while soul do
+        foundSomething = true
         local player = API.PlayerCoord()
-        local dx = soul.Tile_XYZ.x - player.x
-        local dy = soul.Tile_XYZ.y - player.y
+        local dx, dy = soul.Tile_XYZ.x - player.x, soul.Tile_XYZ.y - player.y
         local currentDist = math.sqrt(dx * dx + dy * dy)
 
+        -- Initial retreat if too close
         if not initialRetreatDone and currentDist <= 15 then
             print("Initial retreat: running far from Vengeful Soul...")
             for attempt = 1, 10 do
-                local randX = math.random(-20, 20)
-                local randY = math.random(-20, 20)
-                local targetX = player.x + randX
-                local targetY = player.y + randY
+                local randX, randY = math.random(-20, 20), math.random(-20, 20)
+                local targetX, targetY = player.x + randX, player.y + randY
                 local distFromSoul = math.sqrt((targetX - soul.Tile_XYZ.x)^2 + (targetY - soul.Tile_XYZ.y)^2)
+
                 if distFromSoul > 15 then
                     API.DoAction_Tile(WPOINT.new(targetX, targetY, player.z))
                     initialRetreatDone = true
@@ -192,14 +197,15 @@ local function DO_ElidinisSouls()
             end
             API.RandomSleep2(1800, 150, 150)
 
-        elseif currentDist <= 7 then
+        -- Dodge if it's too close
+         elseif currentDist <= 7 then
             print("Vengeful Soul is close, intelligently dodging...")
             local escapeTile = getEscapeTile(player, soul, 6)
             if escapeTile then
                 API.DoAction_Tile(escapeTile)
             else
-                local farTile = WPOINT.new(player.x + math.random(-20, 20), player.y + math.random(-20, 20), player.z)
-                API.DoAction_Tile(farTile)
+                local fallbackTile = WPOINT.new(player.x + math.random(-20, 20), player.y + math.random(-20, 20), player.z)
+                API.DoAction_Tile(fallbackTile)
             end
             API.RandomSleep2(1200, 100, 100)
 
@@ -208,6 +214,8 @@ local function DO_ElidinisSouls()
         end
 
         soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
+        end
+            if not foundSomething then break end
     end
 end
 
@@ -343,6 +351,8 @@ local function useCleanOnSuper()
                                   string.find(item.textitem, "Papaya") or
                                   string.find(item.textitem, "Jug") or
                                   string.find(item.textitem, "crystal") or
+                                  string.find(item.textitem, "Yak") or
+                                  string.find(item.textitem, "Wine") or
                                   string.find(item.textitem, "Wine") or
                                   string.find(item.textitem, "++")) then
             cleanItem = item.itemid1
