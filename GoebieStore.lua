@@ -14,7 +14,6 @@
 
 local API = require("api")
 local UTILS = require("utils")
-local ShouldContinue = true
 local maxIdleTime = 20
 
 API.SetDrawTrackedSkills(true)
@@ -31,7 +30,7 @@ local lastPotionTime = 0
 local lastCycleTime = os.time()
 local bankingStateCalls = 0
 local firstLoop = true
-local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC", "DIVINATION", "PRAYER", "FIREMAKING", "COOKING"}
+local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC", "DIVINATION", "PRAYER", "FIREMAKING", "COOKING", "NECROMANCY", }
 local startXp = {}
 local lastXpTime = os.time()
 
@@ -151,26 +150,36 @@ local function DO_ElidinisSouls()
             end
         end
 
-        -- Mimicking Soul
-        local mimicSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
-        if mimicSoul then
-            foundSomething = true
-            print("Found Mimicking Soul, diving or walking to its tile once...")
-            local tile = mimicSoul.Tile_XYZ
-            if canDive() then
-                print("Dive is ready — executing dive.")
-                API.DoAction_Dive_Tile(WPOINT.new(tile.x, tile.y, tile.z))
-                API.RandomSleep2(1200, 550, 650)
-            else
-                print("Dive not ready or failed — walking instead.")
-                API.DoAction_Tile(WPOINT.new(tile.x, tile.y, tile.z))
-                API.RandomSleep2(1200, 550, 650)
-            end
-            while API.ReadAllObjectsArray({1}, {18222}, {})[1] do
-                API.RandomSleep2(200, 50, 50)
-            end
-        end
+    -- Mimicking Soul
+local mimicSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
+if mimicSoul then
+    foundSomething = true
+    print("Found Mimicking Soul, diving or walking to its tile once...")
+    local tile = mimicSoul.Tile_XYZ
 
+    local triedDive = false
+    if canDive() then
+        print("Dive is ready — executing dive.")
+        API.DoAction_Dive_Tile(WPOINT.new(tile.x, tile.y, tile.z))
+        API.RandomSleep2(1200, 550, 650)
+        triedDive = true
+    end
+
+    -- Check if the dive failed or wasn't attempted, then walk with WalkerF
+    local player = API.PlayerCoord()
+    local dx, dy = tile.x - player.x, tile.y - player.y
+    local distance = math.sqrt(dx * dx + dy * dy)
+    if (not triedDive) or (distance > 1.5) then
+        print("Dive not ready or failed — walking instead using WalkerF.")
+        API.DoAction_WalkerF(FFPOINT.new(tile.x, tile.y, tile.z))
+        API.RandomSleep2(1200, 550, 650)
+    end
+
+    -- Wait until Mimicking Soul is gone
+    while API.ReadAllObjectsArray({1}, {18222}, {})[1] do
+        API.RandomSleep2(200, 50, 50)
+    end
+end
        -- Vengeful Soul
         local soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
         local initialRetreatDone = false
@@ -248,7 +257,7 @@ local function banking()
 
     if uniqueItemCount < 0 then
         print("Error: Less than two different items found after banking. Stopping script.")
-        ShouldContinue = false
+        API.Write_LoopyLoop(false)
     end
 end
 
@@ -424,6 +433,7 @@ local function checkForVialOrUnfItems()
             string.find(item.textitem, "scale") or
             string.find(item.textitem, "energy") or
             string.find(item.textitem, "stick") or
+            string.find(item.textitem, "necroplasm") or
             string.find(item.textitem, "milk")
         ) then
             local cleanedName = string.gsub(item.textitem, "<.->", "")
@@ -456,7 +466,7 @@ local function performCraftingAction()
             API.KeyboardPress32(0x20, 0)
             UTILS.countTicks(5)
         else
-            ShouldContinue = false
+            API.Write_LoopyLoop(false)
         end
         return
     end
@@ -480,7 +490,15 @@ local function performCraftingAction()
     if itemName:find("energy") then
         if API.InvStackSize(unfItem) < 120 then
             print("Out of energy, stopping.")
-            ShouldContinue = false
+            API.Write_LoopyLoop(false)
+            return
+        end
+    end
+
+    if itemName:find("necroplasm") then
+        if API.InvStackSize(unfItem) < 20 then
+            print("Out of necroplasm, stopping.")
+            API.Write_LoopyLoop(false)
             return
         end
     end
@@ -491,12 +509,13 @@ local function performCraftingAction()
             API.KeyboardPress32(0x20, 0)
             UTILS.countTicks(5)
         else
-            ShouldContinue = false
+            API.Write_LoopyLoop(false)
         end
     end
 end
 
-while API.Read_LoopyLoop(true) and ShouldContinue do
+API.Write_LoopyLoop(true)
+while API.Read_LoopyLoop() do
     checkXpIncrease()
     local function soulsExist()
         return #API.ReadAllObjectsArray({1},{17720},{}) > 0 or
@@ -511,7 +530,7 @@ while API.Read_LoopyLoop(true) and ShouldContinue do
     end
 
     if bankingStateCalls >= 2 then
-        ShouldContinue = false
+        API.Write_LoopyLoop(false)
         break
     end
 
