@@ -15,6 +15,14 @@
 local API = require("api")
 local UTILS = require("utils")
 local maxIdleTime = 20
+local currentState = states.Banking
+local lastPotionTime = 0
+local lastCycleTime = os.time()
+local bankingStateCalls = 0
+local firstLoop = true
+local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC", "DIVINATION", "PRAYER", "FIREMAKING", "COOKING", "NECROMANCY", }
+local startXp = {}
+local lastXpTime = os.time()
 
 API.SetDrawTrackedSkills(true)
 API.SetMaxIdleTime(10)
@@ -24,15 +32,6 @@ local states = {
     Crafting = 2,
     BuyingPotions = 3,
 }
-
-local currentState = states.Banking
-local lastPotionTime = 0
-local lastCycleTime = os.time()
-local bankingStateCalls = 0
-local firstLoop = true
-local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC", "DIVINATION", "PRAYER", "FIREMAKING", "COOKING", "NECROMANCY", }
-local startXp = {}
-local lastXpTime = os.time()
 
 for _, skill in ipairs(trackedSkill) do
     startXp[skill] = API.GetSkillXP(skill) or 0
