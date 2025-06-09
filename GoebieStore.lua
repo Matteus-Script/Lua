@@ -150,36 +150,37 @@ local function DO_ElidinisSouls()
             end
         end
 
-    -- Mimicking Soul
-local mimicSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
-if mimicSoul then
-    foundSomething = true
-    print("Found Mimicking Soul, diving or walking to its tile once...")
-    local tile = mimicSoul.Tile_XYZ
+        -- Mimicking Soul
+        local mimicSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
+        if mimicSoul then
+            foundSomething = true
+            print("Found Mimicking Soul, diving or walking to its tile once...")
+            local tile = mimicSoul.Tile_XYZ
 
-    local triedDive = false
-    if canDive() then
-        print("Dive is ready — executing dive.")
-        API.DoAction_Dive_Tile(WPOINT.new(tile.x, tile.y, tile.z))
-        API.RandomSleep2(1200, 550, 650)
-        triedDive = true
-    end
+         local triedDive = false
+            if canDive() then
+            print("Dive is ready — executing dive.")
+            API.DoAction_Dive_Tile(WPOINT.new(tile.x, tile.y, tile.z))
+            API.RandomSleep2(1200, 550, 650)
+            triedDive = true
+        end
 
-    -- Check if the dive failed or wasn't attempted, then walk with WalkerF
-    local player = API.PlayerCoord()
-    local dx, dy = tile.x - player.x, tile.y - player.y
-    local distance = math.sqrt(dx * dx + dy * dy)
-    if (not triedDive) or (distance > 1.5) then
-        print("Dive not ready or failed — walking instead using WalkerF.")
-        API.DoAction_WalkerF(FFPOINT.new(tile.x, tile.y, tile.z))
-        API.RandomSleep2(1200, 550, 650)
-    end
+        -- Check if the dive failed or wasn't attempted, then walk with WalkerF
+        local player = API.PlayerCoord()
+        local dx, dy = tile.x - player.x, tile.y - player.y
+        local distance = math.sqrt(dx * dx + dy * dy)
+        if (not triedDive) or (distance > 1.5) then
+            print("Dive not ready or failed — walking instead using WalkerF.")
+            API.DoAction_WalkerF(FFPOINT.new(tile.x, tile.y, tile.z))
+            API.RandomSleep2(1200, 550, 650)
+        end
 
-    -- Wait until Mimicking Soul is gone
-    while API.ReadAllObjectsArray({1}, {18222}, {})[1] do
-        API.RandomSleep2(200, 50, 50)
-    end
-end
+            -- Wait until Mimicking Soul is gone
+            while API.ReadAllObjectsArray({1}, {18222}, {})[1] do
+                API.RandomSleep2(200, 50, 50)
+            end
+        end
+
        -- Vengeful Soul
         local soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
         local initialRetreatDone = false
@@ -192,7 +193,7 @@ end
 
         -- Initial retreat if too close
         if not initialRetreatDone and currentDist <= 15 then
-            print("Initial retreat: running far from Vengeful Soul...")
+            print("Running far from Vengeful Soul...")
             for attempt = 1, 10 do
                 local randX, randY = math.random(-20, 20), math.random(-20, 20)
                 local targetX, targetY = player.x + randX, player.y + randY
@@ -208,7 +209,7 @@ end
 
         -- Dodge if it's too close
          elseif currentDist <= 7 then
-            print("Vengeful Soul is close, intelligently dodging...")
+            print("Vengeful Soul is close, dodging...")
             local escapeTile = getEscapeTile(player, soul, 6)
             if escapeTile then
                 API.DoAction_Tile(escapeTile)
@@ -255,7 +256,7 @@ local function banking()
         uniqueItemCount = uniqueItemCount + 1
     end
 
-    if uniqueItemCount < 0 then
+    if uniqueItemCount < 1 then
         print("Error: Less than two different items found after banking. Stopping script.")
         API.Write_LoopyLoop(false)
     end
@@ -335,9 +336,9 @@ end
 
 local function useCleanOnSuper()
     local inventoryItems = API.ReadInvArrays33()
-    if not inventoryItems then
+     if not inventoryItems then
         print("Error: Inventory is empty or could not be read.")
-        return false
+        API.Write_LoopyLoop(false)
     end
 
     local unfItem, berryItem, cleanItem, superItem
@@ -396,13 +397,12 @@ local function useCleanOnSuper()
     return false
 end
 
-
-
 local function checkForVialOrUnfItems()
     local inventoryItems = API.ReadInvArrays33()
 
     if not inventoryItems then
         print("Error: Inventory is empty or could not be read.")
+        API.Write_LoopyLoop(false)
     end
 
     local added = {}
@@ -447,20 +447,76 @@ local function checkForVialOrUnfItems()
     end
 end
 
+local function isLunarSpellbook()
+    local state = API.VB_FindPSettinOrder(4).state
+    return (state & 0x3) == 2
+end
+
+local function hasRunes(runeReqs)
+    local staffID = API.GetEquipSlot(3).itemid1
+
+    local skipRunes = {}
+
+    if staffID == 41885 then -- Elemental battlestaff
+        skipRunes[554] = true  -- fire
+        skipRunes[555] = true  -- water
+        skipRunes[556] = true  -- air
+        skipRunes[557] = true  -- earth
+    elseif staffID == 11736 then -- Steam battlestaff
+        skipRunes[554] = true  -- fire
+        skipRunes[555] = true  -- water
+    elseif staffID == 6562 then -- Mud battlestaff
+        skipRunes[555] = true  -- water
+        skipRunes[557] = true  -- earth
+    end
+
+    for id, amount in pairs(runeReqs) do
+        if not skipRunes[id] and API.InvStackSize(id) < amount then
+            print("Missing runes: id=" .. id .. " required=" .. amount)
+            return false
+        end
+    end
+
+    return true
+end
+
 local function performCraftingAction()
     local unfItem, itemName = checkForVialOrUnfItems()
     if not unfItem or not itemName then
+        API.Write_LoopyLoop(false)
         return
     end
 
     itemName = itemName:lower()
 
     if itemName:find("sandstone") then
+        if not isLunarSpellbook() then
+            print("Not on Lunar spellbook")
+            API.Write_LoopyLoop(false)
+            return
+        end
+        local runeReqs = { [556] = 10, [554] = 6, [9075] = 2 }
+        if not hasRunes(runeReqs) then
+            print("Missing required runes for Superglass Make spell.")
+            API.Write_LoopyLoop(false)
+            return
+        end
         API.DoAction_Interface(0xffffffff, 0xffffffff, 1, 1461, 1, 125, API.OFF_ACT_GeneralInterface_route)
         return
     end
 
     if itemName:find("decorated") then
+        if not isLunarSpellbook() then
+            print("Not on Lunar spellbook")
+            API.Write_LoopyLoop(false)
+            return
+        end
+        local runeReqs = { [555] = 5, [557] = 5, [554] = 10, [9075] = 1 }
+        if not hasRunes(runeReqs) then
+            print("Missing required runes for Fire Urn spell.")
+            API.Write_LoopyLoop(false)
+            return
+        end
         API.DoAction_Interface(0xffffffff, 0xffffffff, 1, 1461, 1, 209, API.OFF_ACT_GeneralInterface_route)
         if waitCraftingInterface() then
             API.KeyboardPress32(0x20, 0)
@@ -471,19 +527,40 @@ local function performCraftingAction()
         return
     end
 
-    if itemName:find("grimy") then
-        API.DoAction_Interface(0xffffffff,0x85db,3,1464,15,1,API.OFF_ACT_GeneralInterface_route)
-        return
+    if  itemName:find("miasma rune") or
+        itemName:find("mud rune") or
+        itemName:find("unicorn horn") or
+        itemName:find("scale") or
+        itemName:find("bird's nest") then
+            if not isLunarSpellbook() then
+                print("Not on Lunar spellbook")
+                API.Write_LoopyLoop(false)
+                return
+            end
+            local runeReqs = { [9075] = 2, [563] = 1 }
+            if not hasRunes(runeReqs) then
+                print("Missing required runes Telekenetic Grind spell.")
+                API.Write_LoopyLoop(false)
+                return
+            end
+            API.DoAction_Interface(0x9e, 0xffffffff, 0, 1461, 1, 211, API.OFF_ACT_Bladed_interface_route)
+            API.RandomSleep2(300, 300, 100)
+            API.DoAction_Inventory1(unfItem, 0, 0, API.OFF_ACT_GeneralInterface_route1)
+            return
     end
 
-    if itemName:find("miasma rune") or
-       itemName:find("mud rune") or
-       itemName:find("unicorn horn") or
-       itemName:find("scale") or
-       itemName:find("bird's nest") then
-        API.DoAction_Interface(0x9e, 0xffffffff, 0, 1461, 1, 211, API.OFF_ACT_Bladed_interface_route)
-        API.RandomSleep2(300, 300, 100)
-        API.DoAction_Inventory1(unfItem, 0, 0, API.OFF_ACT_GeneralInterface_route1)
+    if itemName:find("grimy") then
+        local equippedCape = API.GetEquipSlot(1).itemid1
+        if equippedCape == 9775 then
+            print("Found 99 Herblore Cape equipped!")
+            API.DoAction_Interface(0xffffffff, 0x85db, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
+        elseif equippedCape == 31278 then
+            print("Found 120 Herblore Cape equipped!")
+            API.DoAction_Interface(0xffffffff, 0x7a2e, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
+        else
+            print("No Herblore cape equipped.")
+            API.Write_LoopyLoop(false)
+        end
         return
     end
 
