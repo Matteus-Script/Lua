@@ -549,21 +549,6 @@ local function performCraftingAction()
             return
     end
 
-    if itemName:find("grimy") then
-        local equippedCape = API.GetEquipSlot(1).itemid1
-        if equippedCape == 9775 then
-            print("Found 99 Herblore Cape equipped!")
-            API.DoAction_Interface(0xffffffff, 0x85db, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
-        elseif equippedCape == 31278 then
-            print("Found 120 Herblore Cape equipped!")
-            API.DoAction_Interface(0xffffffff, 0x7a2e, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
-        else
-            print("No Herblore cape equipped.")
-            API.Write_LoopyLoop(false)
-        end
-        return
-    end
-
     if itemName:find("energy") then
         if API.InvStackSize(unfItem) < 120 then
             print("Out of energy, stopping.")
@@ -580,7 +565,18 @@ local function performCraftingAction()
         end
     end
 
-    print("Normal crafting with item: " .. itemName)
+    if itemName:find("grimy") then
+    local equippedCape = API.GetEquipSlot(1).itemid1
+    if equippedCape == 9775 then
+        print("Found 99 Herblore Cape equipped!")
+        API.DoAction_Interface(0xffffffff, 0x85db, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
+    elseif equippedCape == 31278 then
+        print("Found 120 Herblore Cape equipped!")
+        API.DoAction_Interface(0xffffffff, 0x7a2e, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
+    else
+        print("No Herblore Cape equipped cleaning them instead.")   
+    end
+    
     if API.DoAction_Inventory1(unfItem, 0, 1, API.OFF_ACT_GeneralInterface_route) then
         if waitCraftingInterface() then
             API.KeyboardPress32(0x20, 0)
@@ -589,6 +585,8 @@ local function performCraftingAction()
             API.Write_LoopyLoop(false)
         end
     end
+    return
+end
 end
 
 API.Write_LoopyLoop(true)
