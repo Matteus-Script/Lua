@@ -153,30 +153,36 @@ local function DO_ElidinisSouls()
         -- Mimicking Soul
         local mimicSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
         if mimicSoul then
-            foundSomething = true
-            print("Found Mimicking Soul, diving or walking to its tile once...")
-            local tile = mimicSoul.Tile_XYZ
+        foundSomething = true
+        print("Found Mimicking Soul, diving or walking to its tile once...")
 
-         local triedDive = false
-            if canDive() then
+        local triedDive = false
+
+        -- Try to dive once if available
+        if canDive() then
             print("Dive is ready — executing dive.")
+            local tile = mimicSoul.Tile_XYZ
             API.DoAction_Dive_Tile(WPOINT.new(tile.x, tile.y, tile.z))
             API.RandomSleep2(1200, 550, 650)
             triedDive = true
         end
 
-        -- Check if the dive failed or wasn't attempted, then walk with WalkerF
-        local player = API.PlayerCoord()
-        local dx, dy = tile.x - player.x, tile.y - player.y
-        local distance = math.sqrt(dx * dx + dy * dy)
-        if (not triedDive) or (distance > 1.5) then
-            print("Dive not ready or failed — walking instead using WalkerF.")
-            API.DoAction_WalkerF(FFPOINT.new(tile.x, tile.y, tile.z))
-            API.RandomSleep2(1200, 550, 650)
-        end
+        -- Loop until the Mimicking Soul disappears
+        while API.ReadAllObjectsArray({1}, {18222}, {})[1] do
+            local updatedSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
+            local tile = updatedSoul.Tile_XYZ
 
-            -- Wait until Mimicking Soul is gone
-            while API.ReadAllObjectsArray({1}, {18222}, {})[1] do
+            -- Check if dive was not attempted or failed (player still too far)
+            local player = API.PlayerCoord()
+            local dx, dy = tile.x - player.x, tile.y - player.y
+            local distance = math.sqrt(dx * dx + dy * dy)
+            if (not triedDive) or (distance > 1.5) then
+                 print("Walking to Mimicking Soul using WalkerF.")
+                 API.DoAction_WalkerF(FFPOINT.new(tile.x, tile.y, tile.z))
+                 API.RandomSleep2(1200, 550, 650)
+                end
+
+                -- Continue looping and updating position
                 API.RandomSleep2(200, 50, 50)
             end
         end
@@ -413,7 +419,7 @@ local function checkForVialOrUnfItems()
         if item.textitem and (
             string.find(item.textitem, "Grimy") or 
             string.find(item.textitem, "water") or
-            string.find(item.textitem, "(unf)") or 
+            string.find(item.textitem, "(unfinished)") or 
             string.find(item.textitem, "flask") or
             string.find(item.textitem, "shaft") or
             string.find(item.textitem, "Headless") or
@@ -566,15 +572,26 @@ local function performCraftingAction()
     end
 
     if itemName:find("grimy") then
-    local equippedCape = API.GetEquipSlot(1).itemid1
-    if equippedCape == 9775 then
-        print("Found 99 Herblore Cape equipped!")
-        API.DoAction_Interface(0xffffffff, 0x85db, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
-    elseif equippedCape == 31278 then
-        print("Found 120 Herblore Cape equipped!")
-        API.DoAction_Interface(0xffffffff, 0x7a2e, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
-    else
-        print("No Herblore Cape equipped cleaning them instead.")   
+        local equippedCape = API.GetEquipSlot(1).itemid1
+        if equippedCape == 9775 then
+            print("Found 99 Herblore Cape equipped!")
+            API.DoAction_Interface(0xffffffff, 0x85db, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
+        elseif equippedCape == 31278 then
+            print("Found 120 Herblore Cape equipped!")
+            API.DoAction_Interface(0xffffffff, 0x7a2e, 3, 1464, 15, 1, API.OFF_ACT_GeneralInterface_route)
+        else
+            print("No Herblore Cape equipped, cleaning them instead.")
+        end
+
+        if API.DoAction_Inventory1(unfItem, 0, 1, API.OFF_ACT_GeneralInterface_route) then
+            if waitCraftingInterface() then
+                API.KeyboardPress32(0x20, 0)
+                UTILS.countTicks(5)
+            else
+                API.Write_LoopyLoop(false)
+            end
+        end
+        return
     end
     
     if API.DoAction_Inventory1(unfItem, 0, 1, API.OFF_ACT_GeneralInterface_route) then
@@ -585,9 +602,8 @@ local function performCraftingAction()
             API.Write_LoopyLoop(false)
         end
     end
-    return
 end
-end
+
 
 API.Write_LoopyLoop(true)
 while API.Read_LoopyLoop() do
