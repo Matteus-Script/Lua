@@ -369,15 +369,20 @@ local function useCleanOnSuper()
                                   string.find(item.textitem, "crystal") or
                                   string.find(item.textitem, "Yak") or
                                   string.find(item.textitem, "Wine") or
-                                  string.find(item.textitem, "Wine") or
                                   string.find(item.textitem, "++")) then
             cleanItem = item.itemid1
             itemCounts[item.textitem] = (itemCounts[item.textitem] or 0) + 1
             itemIDs[item.textitem] = item.itemid1
 
-            if item.textitem:lower():find("clean torstol") then
-                skipWait = true
+        if item.textitem:lower():find("clean torstol") then
+            local equippedCape = API.GetEquipSlot(1).itemid1
+            if equippedCape == 31278 then
+            skipWait = true
+            print("Making Batch overloads")
+            return nil, nil
             end
+        end
+
         elseif item.textitem and (string.find(item.textitem, "(3)") or string.find(item.textitem, "berries") or string.find(item.textitem, "Grapes")) then
             superItem = item.itemid1
             table.insert(foundItems, "Super item: " .. item.textitem)
@@ -593,7 +598,7 @@ local function performCraftingAction()
         end
         return
     end
-    
+
     if API.DoAction_Inventory1(unfItem, 0, 1, API.OFF_ACT_GeneralInterface_route) then
         if waitCraftingInterface() then
             API.KeyboardPress32(0x20, 0)
