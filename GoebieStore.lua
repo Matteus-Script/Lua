@@ -1,10 +1,10 @@
---[[
-# Script Name:   <GoebieStore>
-# Description:   <Makes potions and buys supplies from the Goebie store>
-# Author:        <Matteus>
-# Version:       <1.11>
-# Date:          <2025.03.24>
---]]
+
+-- Title: GoebieStore
+-- Author: <Matteus>
+-- Description: <Skills and buys supplies from the Goebie store>
+-- Version: <1.11>
+-- Category: Skilling
+-- Date : 2025.03.24
 
 --[[v1.10 - 31-03-2025
     - Added Fletching methods ( Logs>Unstrung>Bows) (logs>shafts>Headless>Arrows). -- note if crafting unstrung or shafts from logs make sure you make 1 first yourself so it remembers last made item 
