@@ -5,16 +5,6 @@
 -- Category: Dailies
 -- Date : 2025.03.24
 
---[[
-Changelog:
-v1.0 - 24-03-2025
-    - Initial release
-v1.1 - 03-04-2025
-    - Added support for Crystalsandstone and Redsandstone make sure you have porter charges and GOTE enabled will add other method in future -turn on Resourceful aura to get more :)
-v.1.2 - 05-04-2025
-    - Added support for Herblore shops in Taverly, Fort Forinthry and Prifddinas
-]]--
-
 local API = require("api")
 local LODESTONES = require("lodestones")       
 local UTILS = require("utils")
