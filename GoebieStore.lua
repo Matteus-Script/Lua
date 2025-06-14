@@ -132,6 +132,7 @@ local function DO_ElidinisSouls()
         if #API.ReadAllObjectsArray({1}, {17720}, {}) > 0 then
             foundSomething = true
             print("Found Lost Soul, interacting")
+            API.RandomSleep2(600, 550, 650)
             API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17720}, 50, true, 0)
             API.RandomSleep2(1500, 550, 650)
             while #API.ReadAllObjectsArray({1}, {17720}, {}) > 0 do
@@ -143,6 +144,7 @@ local function DO_ElidinisSouls()
         if #API.ReadAllObjectsArray({1}, {17739}, {}) > 0 then
             foundSomething = true
             print("Found Unstable Soul, interacting")
+            API.RandomSleep2(600, 550, 650)
             API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {17739}, 50, true, 0)
             API.RandomSleep2(1500, 550, 650)
             while #API.ReadAllObjectsArray({1}, {17739}, {}) > 0 do
@@ -155,10 +157,7 @@ local function DO_ElidinisSouls()
         if mimicSoul then
         foundSomething = true
         print("Found Mimicking Soul, diving or walking to its tile once...")
-
         local triedDive = false
-
-        -- Try to dive once if available
         if canDive() then
             print("Dive is ready — executing dive.")
             local tile = mimicSoul.Tile_XYZ
@@ -166,23 +165,18 @@ local function DO_ElidinisSouls()
             API.RandomSleep2(1200, 550, 650)
             triedDive = true
         end
-
-        -- Loop until the Mimicking Soul disappears
         while API.ReadAllObjectsArray({1}, {18222}, {})[1] do
             local updatedSoul = API.ReadAllObjectsArray({1}, {18222}, {})[1]
             local tile = updatedSoul.Tile_XYZ
-
-            -- Check if dive was not attempted or failed (player still too far)
             local player = API.PlayerCoord()
             local dx, dy = tile.x - player.x, tile.y - player.y
             local distance = math.sqrt(dx * dx + dy * dy)
             if (not triedDive) or (distance > 1.5) then
-                 print("Walking to Mimicking Soul using WalkerF.")
+                 print("Walking to Mimicking.")
                  API.DoAction_WalkerF(FFPOINT.new(tile.x, tile.y, tile.z))
                  API.RandomSleep2(1200, 550, 650)
                 end
 
-                -- Continue looping and updating position
                 API.RandomSleep2(200, 50, 50)
             end
         end
@@ -197,7 +191,6 @@ local function DO_ElidinisSouls()
         local dx, dy = soul.Tile_XYZ.x - player.x, soul.Tile_XYZ.y - player.y
         local currentDist = math.sqrt(dx * dx + dy * dy)
 
-        -- Initial retreat if too close
         if not initialRetreatDone and currentDist <= 15 then
             print("Running far from Vengeful Soul...")
             for attempt = 1, 10 do
@@ -213,7 +206,6 @@ local function DO_ElidinisSouls()
             end
             API.RandomSleep2(1800, 150, 150)
 
-        -- Dodge if it's too close
          elseif currentDist <= 7 then
             print("Vengeful Soul is close, dodging...")
             local escapeTile = getEscapeTile(player, soul, 6)
@@ -479,6 +471,8 @@ local function hasRunes(runeReqs)
     elseif staffID == 6562 then -- Mud battlestaff
         skipRunes[555] = true  -- water
         skipRunes[557] = true  -- earth
+    elseif staffID == 1393 then -- fire battlestaff
+        skipRunes[554] = true  -- fire
     end
 
     for id, amount in pairs(runeReqs) do
