@@ -1,10 +1,9 @@
---[[
-# Script Name:   <RuneShop Runner>
-# Description:   <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
-# Author:        <Matteus>
-# Version:       <1.2>
-# Date:          <2025.03.24>
---]]
+-- Title: Shoprunner
+-- Author: <Matteus>
+-- Description: <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
+-- Version: <1.2>
+-- Category: Dailies
+-- Date : 2025.03.24
 
 --[[
 Changelog:
