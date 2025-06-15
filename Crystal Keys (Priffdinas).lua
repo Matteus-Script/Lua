@@ -1,10 +1,9 @@
---[[
-# Script Name:   Crystal Keys
-# Description:   Opens crystal keys in Priff
-# Author:        Matteus
-# Version:       1.1
-# Date:          2024.08.28
---]]
+-- Title: Crystal Keys (Priffdinas)
+-- Author: <Matteus>
+-- Description: <Opens crystal keys in Priff>
+-- Version: <1.1>
+-- Category: Misc
+-- Date : 2024.08.28
 
 local API = require('api')
 
