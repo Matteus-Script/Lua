@@ -1,10 +1,9 @@
---[[
-# Script Name:   <Urn Crafter (Ironman)>
-# Description:   <Makes Urns in Menaphos select your urn then start>
-# Author:        <Matteus>
-# Version:       <1.0>
-# Date:          <2024.08.26>
---]]
+-- Title: Urn Crafter (Menaphos)
+-- Author: <Matteus>
+-- Description: Makes Urns in Priff select your urn then start>
+-- Version: <1.0>
+-- Category: Crafting
+-- Date : 2024.08.26
 
 local API = require("api")
 
