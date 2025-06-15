@@ -1,10 +1,9 @@
---[[
-# Script Name:   <Priff Summoning>
-# Description:   <Makes pouches in Priff, start at the bank uses loadlastpreset>
-# Author:        <Matteus>
-# Version:       <1.1>
-# Date:          <2025.01.23>
---]]
+-- Title: Priff Summoning
+-- Author: <Matteus>
+-- Description: <Makes pouches in Priff, start at the bank uses loadlastpreset>
+-- Version: <1.1>
+-- Category: Summoning
+-- Date : 2025.01.23
 
 API = require("api")
 UTILS = require("utils")
