@@ -531,7 +531,7 @@ local function FortHerbshop()
         UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
         if API.BankOpen2() then 
             API.KeyboardPress("3", 0, 50)
-            API.RandomSleep2(1000, 1000, 1000)
+            API.RandomSleep2(1200, 1500, 1000)
         end
     end
 
@@ -544,6 +544,8 @@ local function FortHerbshop()
         if not API.InvFull_() then break end
         bankSequence()
     end
+
+    bankSequence()
 
     if SHOP_STATUS.Buybroads then
         API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 30027 },50)
@@ -558,6 +560,7 @@ end
 local function BuyBurthorpeBroads()
     LODESTONES.BURTHOPE.Teleport()
     UTILS.dive(randomizeDiveCoordinates(2891, 3547, 0, 1))
+    API.RandomSleep2(100, 200, 50)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {8480}, 50)
     API.RandomSleep2(300, 500, 600)
     UTILS.SleepUntil(isOpen, 10, "Burthorpe broads shop open")
