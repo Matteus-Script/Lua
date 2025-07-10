@@ -1,4 +1,4 @@
--- Title: Shoprunner
+-- Title: Shoprunnerv2
 -- Author: <Matteus>
 -- Description: <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
 -- Version: <1.3>
@@ -30,30 +30,32 @@ local SHOP_STATUS = {
 }
 
 local SHOP_BUY_LIST = {
-    {15363, "-- Vial of water Pack"},
-    {48960, "-- Powerburst vials"},
-    {48961, "-- Bomb vial"},
-    {15364, "-- Eye of newt Pack"},
-    {235,   "-- Unicorn horn dust"},
-    {225,   "-- Limpwort root"},
-    {239,   "-- White berries"},
-    {556,   "-- Air rune"},
-    {555,   "-- Water rune"},
-    {557,   "-- Earth rune"},
-    {554,   "-- Fire rune"},
-    {558,   "-- Mind rune"},
-    {559,   "-- Body rune"},
-    {562,   "-- Chaos rune"},
-    {560,   "-- Death rune"},
-    {563,   "-- Law rune"},
-    {565,   "-- Blood rune"},
-    {566,   "-- Soul rune"},
-    {50246,   "-- Raw rabbit pack"},
-    {50247,   "-- Raw beef pack"},
-    {15365,   "-- Raw bird pack"},
-    {13278,   "-- Broad arrowheads"},
-    {42447,   "-- Enchanted gem pack"},
-
+    { 225,   "-- Limpwort root"           },
+    { 235,   "-- Unicorn horn dust"       },
+    { 239,   "-- White berries"           },
+    { 554,   "-- Fire rune"               },
+    { 555,   "-- Water rune"              },
+    { 556,   "-- Air rune"                },
+    { 557,   "-- Earth rune"              },
+    { 558,   "-- Mind rune"              },
+    { 559,   "-- Body rune"              },
+    { 560,   "-- Death rune"             },
+    { 561,   "-- Nature rune"            },
+    { 562,   "-- Chaos rune"             },
+    { 563,   "-- Law rune"               },
+    { 564,   "-- Cosmic rune"            },
+    { 565,   "-- Blood rune"             },
+    { 566,   "-- Soul rune"              },
+    { 9075,  "-- Astral rune"            },
+    { 13278, "-- Broad arrowheads"       },
+    { 15363, "-- Vial of water Pack"     },
+    { 15364, "-- Eye of newt Pack"       },
+    { 15365, "-- Raw bird pack"          },
+    { 42447, "-- Enchanted gem pack"     },
+    { 48960, "-- Powerburst vials"       },
+    { 48961, "-- Bomb vial"              },
+    { 50246, "-- Raw rabbit pack"        },
+    { 50247, "-- Raw beef pack"          },
 }
 
 local function checkContainerItems(containerID, itemIDs)
