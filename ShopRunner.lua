@@ -1,7 +1,7 @@
 -- Title: Shoprunner
 -- Author: <Matteus>
 -- Description: <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
--- Version: <1.2>
+-- Version: <1.3>
 -- Category: Dailies
 -- Date : 2025.03.24
 
@@ -10,6 +10,98 @@ local LODESTONES = require("lodestones")
 local UTILS = require("utils")
 
 API.SetMaxIdleTime(10)
+
+local SHOP_STATUS = {
+    Lunar = true,
+    Yannile = true,
+    Sarim = true,
+    Void = true,
+    Varrock = true,
+    AlKharid = true,
+    ZamorakMage = true,
+    Magebank = true,
+    Ooglog = true,
+    Redsandstone = true, 
+    Crystalsandstone = true,
+    TaverlyHerb = true,
+    FortHerbshop = true,
+    PriffherbShop = true,
+    Buybroads = true, 
+}
+
+local SHOP_BUY_LIST = {
+    {15363, "-- Vial of water Pack"},
+    {48960, "-- Powerburst vials"},
+    {48961, "-- Bomb vial"},
+    {15364, "-- Eye of newt Pack"},
+    {235,   "-- Unicorn horn dust"},
+    {225,   "-- Limpwort root"},
+    {239,   "-- White berries"},
+    {556,   "-- Air rune"},
+    {555,   "-- Water rune"},
+    {557,   "-- Earth rune"},
+    {554,   "-- Fire rune"},
+    {558,   "-- Mind rune"},
+    {559,   "-- Body rune"},
+    {562,   "-- Chaos rune"},
+    {560,   "-- Death rune"},
+    {563,   "-- Law rune"},
+    {565,   "-- Blood rune"},
+    {566,   "-- Soul rune"},
+    {50246,   "-- Raw rabbit pack"},
+    {50247,   "-- Raw beef pack"},
+    {15365,   "-- Raw bird pack"},
+    {13278,   "-- Broad arrowheads"},
+    {42447,   "-- Enchanted gem pack"},
+
+}
+
+local function checkContainerItems(containerID, itemIDs)
+    local items = API.Container_Get_all(containerID)
+    if not items or #items == 0 then
+        print("Container is empty or not accessible.")
+        return {}
+    end
+
+    local found = {}
+    for _, id in ipairs(itemIDs) do
+        found[id] = false
+    end
+    for _, item in ipairs(items) do
+        if found[item.item_id] ~= nil and item.item_stack > 0 then
+            found[item.item_id] = true
+        end
+    end
+    for id, present in pairs(found) do
+        print(string.format("Item ID: %d, In stock: %s", id, tostring(present)))
+    end
+    return found
+end
+
+local function BuyFromShopContainer(containerID)
+    local shopItems = API.Container_Get_all(containerID)
+    if not shopItems or #shopItems == 0 then
+        print("Shop container is empty or not accessible.")
+        return
+    end
+
+    local idToSlot = {}
+    for i, item in ipairs(shopItems) do
+        if item.item_id then
+            idToSlot[item.item_id] = {slot = i - 1, stack = item.item_stack}
+        end
+    end
+
+    for _, entry in ipairs(SHOP_BUY_LIST) do
+        local itemID, comment = entry[1], entry[2]
+        local slotInfo = idToSlot[itemID]
+        if slotInfo and slotInfo.stack > 0 then
+            print(string.format("Buying slot %d (ID %d) %s", slotInfo.slot, itemID, comment or ""))
+            API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, slotInfo.slot, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(100, 200, 300)
+        end
+    end
+end
 
 local function isOpen()
     return API.Compare2874Status(40, false) or API.Compare2874Status(18, false)
@@ -31,23 +123,6 @@ local function OpenDoor(openDoorID, openX, openY, closedDoorID, closedX, closedY
 
     return isDoorOpen()
 end
-
-local SHOP_STATUS = {
-    Lunar = true,
-    Yannile = true,
-    Sarim = true,
-    Void = true,
-    Varrock = true,
-    AlKharid = true,
-    ZamorakMage = true,
-    Magebank = true,
-    Ooglog = true,
-    Redsandstone = true, 
-    Crystalsandstone = true,
-    TaverlyHerb = true,
-    FortHerbshop = true,
-    PriffherbShop = true,
-}
 
 local function clickRandomTile(baseX, baseY, range)
     local offsetX = math.random(-range, range)
@@ -104,11 +179,7 @@ local function Lunar()
     local opened = UTILS.SleepUntil(isOpen, 10, "Lunar shop open")
     if not opened then return end
 
-    local Items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(419)
     SHOP_STATUS.Lunar = false
 end
 
@@ -147,11 +218,7 @@ local function buyMagesGuild()
     local opened = UTILS.SleepUntil(isOpen, 10, "Mage Guild shop open")
     if not opened then return end
 
-    local Items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(64) 
     SHOP_STATUS.Yannile = false
 end
 
@@ -171,11 +238,7 @@ local function BuySarim()
     local opened = UTILS.SleepUntil(isOpen, 10, "Port Sarim shop open")
     if not opened then return end
 
-    local Items = {0, 1, 2, 3, 4, 5, 6, 7}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(25) 
     SHOP_STATUS.Sarim = false
 end
 
@@ -197,11 +260,7 @@ local function BuyVoid()
     local opened = UTILS.SleepUntil(isOpen, 10, "Void Knight shop open")
     if not opened then return end
 
-    local Items = {0, 1, 2, 3, 4, 5, 6, 7}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(388) 
     SHOP_STATUS.Void = false
 end
 
@@ -218,29 +277,16 @@ local function BuyVarrock()
     local reachedShop = UTILS.SleepUntil(function()
         return API.PInArea(3253, 2, 3397, 2, 0)
     end, 10, "reaching Varrock rune shop")
-
     if not reachedShop then return end
 
     OpenDoor(24383, 3253, 3399, 24384, 3253, 3398)
-
     Interact:NPC("Aubury", "Trade", 8)
     UTILS.randomSleep(1000)
 
     local opened = UTILS.SleepUntil(isOpen, 10, "Varrock rune shop open")
     if not opened then return end
 
-    local ItemsRoute1 = {0, 1, 2, 3, 4, 5, 6, 7}
-    for _, Runes in ipairs(ItemsRoute1) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
-
-    local ItemsRoute2 = {0, 1}
-    for _, Runes in ipairs(ItemsRoute2) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 14, Runes, API.OFF_ACT_GeneralInterface_route2)
-        API.RandomSleep2(100, 200, 300)
-    end
-
+    BuyFromShopContainer(5) 
     SHOP_STATUS.Varrock = false
 end
 
@@ -266,11 +312,7 @@ local function BuyAlkharid()
     local shopOpened1 = UTILS.SleepUntil(isOpen, 10, "Ali Morrisane first shop open")
     if not shopOpened1 then return end
 
-    local Items1 = {0, 1, 2, 3}
-    for _, Runes in ipairs(Items1) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(313) 
 
     Interact:NPC("Ali Morrisane", "Trade")
     UTILS.randomSleep(1000)
@@ -289,11 +331,7 @@ local function BuyAlkharid()
     local shopOpened2 = UTILS.SleepUntil(isOpen, 10, "Ali Morrisane second shop open")
     if not shopOpened2 then return end
 
-    local Items2 = {0, 1, 2, 3, 4, 5, 6, 7, 8}
-    for _, Runes in ipairs(Items2) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(314) 
     SHOP_STATUS.AlKharid = false
 end
 
@@ -320,12 +358,7 @@ local function BuyZamorakMage()
     local shopOpened = UTILS.SleepUntil(isOpen, 10, "Zamorak Mage shop open")
     if not shopOpened then return end
 
-    local Items = {0, 1, 2, 3, 4, 5, 6, 7}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
-
+    BuyFromShopContainer(277) 
     SHOP_STATUS.ZamorakMage = false
 end
 
@@ -378,11 +411,7 @@ local function BuyMagebank()
     local shopOpened = UTILS.SleepUntil(isOpen, 10, "Magebank shop open")
     if not shopOpened then return end
 
-    local Items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(131) 
     SHOP_STATUS.Magebank = false
 end
 
@@ -402,17 +431,12 @@ local function BuyOoglog()
     UTILS.randomSleep(3000)
     UTILS.surge()
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 7056 },50)
-    --Interact:NPC("Chargurr", "Trade")
     UTILS.randomSleep(3000)
 
     local shopOpened = UTILS.SleepUntil(isOpen, 10, "Ooglog shop open")
     if not shopOpened then return end
 
-    local Items = {0, 1, 2}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(534)
 
     SHOP_STATUS.Ooglog = false
 end
@@ -484,11 +508,7 @@ local function TaverlyHerb()
     local shopOpened = UTILS.SleepUntil(isOpen, 10, "Taverly Herb shop open")
     if not shopOpened then return end
     
-    local Items = {3, 4, 5, 7, 8, 9, 10}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(635)
     SHOP_STATUS.TaverlyHerb = false
 end
 
@@ -502,64 +522,47 @@ local function FortHerbshop()
     UTILS.surge()
     clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(1)
-    API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {125115}, 50)
 
-    UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
-
-    if API.BankOpen2() then 
-        API.KeyboardPress("3", 0, 50)
-        API.RandomSleep2(1000, 1000, 1000)
+    local function bankSequence()
+        API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {125115}, 50)
+        API.RandomSleep2(300, 500, 600)
+        UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
+        if API.BankOpen2() then 
+            API.KeyboardPress("3", 0, 50)
+            API.RandomSleep2(1000, 1000, 1000)
+        end
     end
 
-    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {26134}, 50)
-    API.RandomSleep2(300, 500, 600)
-
-    UTILS.SleepUntil(isOpen, 10, "Fort Herb shop open")
-
-    if not isOpen() then return end
-
-    local Items = {3, 4, 5, 7, 8, 9}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
+    while true do
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {26134}, 50)
+        API.RandomSleep2(300, 500, 600)
+        UTILS.SleepUntil(isOpen, 10, "Fort Herb shop open")
+        if not isOpen() then break end
+        BuyFromShopContainer(945)
+        if not API.InvFull_() then break end
+        bankSequence()
     end
 
-    API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {125115}, 50)
-    API.RandomSleep2(300, 500, 600)
-
-    UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
-
-    if API.BankOpen2() then 
-        API.KeyboardPress("3", 0, 50)
-        API.RandomSleep2(1000, 1000, 1000)
-    end
-
-    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {26134}, 50)
-    API.RandomSleep2(300, 500, 600)
-
-    UTILS.SleepUntil(isOpen, 10, "Fort Herb shop open")
-
-    if not isOpen() then return end
-
-    local Items2 = {10}
-    for _, Runes in ipairs(Items2) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
-
-    API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {125115}, 50)
-    API.RandomSleep2(300, 500, 600)
-
-    UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
-
-    if API.BankOpen2() then 
-        API.KeyboardPress("3", 0, 50)
-        API.RandomSleep2(1000, 1000, 1000)
+    if SHOP_STATUS.Buybroads then
+        API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 30027 },50)
+        API.RandomSleep2(300, 500, 600)
+        UTILS.SleepUntil(isOpen, 10, "Raptor shop open")
+        BuyFromShopContainer(538) 
     end
 
     SHOP_STATUS.FortHerbshop = false
 end
 
+local function BuyBurthorpeBroads()
+    LODESTONES.BURTHOPE.Teleport()
+    UTILS.dive(randomizeDiveCoordinates(2891, 3547, 0, 1))
+    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {8480}, 50)
+    API.RandomSleep2(300, 500, 600)
+    UTILS.SleepUntil(isOpen, 10, "Burthorpe broads shop open")
+    BuyFromShopContainer(633) 
+    API.RandomSleep2(300, 500, 600)
+    SHOP_STATUS.Buybroads = false
+end
 
 local function PriffherbShop()
     LODESTONES.PRIFDDINAS.Teleport()
@@ -574,25 +577,17 @@ local function PriffherbShop()
     UTILS.randomSleep(4000)
 
     UTILS.SleepUntil(isOpen, 10, "Priff Herb shop open")
-
     if not isOpen() then return end
 
-    local Items = {4, 5, 6, 9, 10, 11, 12}
-    for _, Runes in ipairs(Items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, Runes, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end
+    BuyFromShopContainer(738) -- Prifddinas Herb shop container
 
     API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {92692}, 50)
 
     UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
-
     if API.BankOpen2() then
         API.KeyboardPress("3", 0, 50)
     end
-
     API.RandomSleep2(300, 500, 600)
-
     SHOP_STATUS.PriffherbShop = false
 end
 
@@ -633,6 +628,8 @@ while API.Read_LoopyLoop() do
         TaverlyHerb()
     elseif SHOP_STATUS.FortHerbshop then
         FortHerbshop()
+    elseif SHOP_STATUS.Buybroads then
+        BuyBurthorpeBroads()    
     elseif SHOP_STATUS.PriffherbShop then
         PriffherbShop()
     else        
