@@ -1,7 +1,7 @@
 -- Title: Shoprunnerv2
 -- Author: <Matteus>
 -- Description: <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
--- Version: <1.3>
+-- Version: <1.3.1>
 -- Category: Dailies
 -- Date : 2025.03.24
 
@@ -27,10 +27,11 @@ local SHOP_STATUS = {
     FortHerbshop = true,
     PriffherbShop = true,
     Buybroads = true, 
+    FLIES = true,
 }
 
 local SHOP_BUY_LIST = {
-    { 225,   "-- Limpwort root"           },
+    { 225,   "-- Limpwurt root"           },
     { 235,   "-- Unicorn horn dust"       },
     { 239,   "-- White berries"           },
     { 554,   "-- Fire rune"               },
@@ -54,6 +55,7 @@ local SHOP_BUY_LIST = {
     { 42447, "-- Enchanted gem pack"     },
     { 48960, "-- Powerburst vials"       },
     { 48961, "-- Bomb vial"              },
+    { 49281, "-- Flies"                  },
     { 50246, "-- Raw rabbit pack"        },
     { 50247, "-- Raw beef pack"          },
 }
@@ -138,14 +140,6 @@ local function randomizeDiveCoordinates(baseX, baseY, baseZ, range)
     local yOffset = math.random(-range, range)
     local zOffset = math.random(-range, range)
     return WPOINT.new(baseX + xOffset, baseY + yOffset, baseZ + zOffset)
-end
-
-local function BuyItems(items)
-    for _, rune in ipairs(items) do
-        API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, rune, API.OFF_ACT_GeneralInterface_route)
-        API.RandomSleep2(100, 200, 300)
-    end 
-    UTILS.randomSleep(1000)
 end
 
 local function checkCues()
@@ -511,6 +505,16 @@ local function TaverlyHerb()
     if not shopOpened then return end
     
     BuyFromShopContainer(635)
+    UTILS.countTicks(1)
+
+    if SHOP_STATUS.FLIES then
+        API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 6893 },50)
+        API.RandomSleep2(300, 500, 600)
+        UTILS.SleepUntil(isOpen, 10, "Pet shop open")
+        BuyFromShopContainer(531)
+        SHOP_STATUS.FLIES = false 
+    end
+
     SHOP_STATUS.TaverlyHerb = false
 end
 
@@ -584,7 +588,7 @@ local function PriffherbShop()
     UTILS.SleepUntil(isOpen, 10, "Priff Herb shop open")
     if not isOpen() then return end
 
-    BuyFromShopContainer(738) -- Prifddinas Herb shop container
+    BuyFromShopContainer(738) 
 
     API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {92692}, 50)
 
