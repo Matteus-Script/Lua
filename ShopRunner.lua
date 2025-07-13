@@ -12,7 +12,7 @@ local UTILS = require("utils")
 API.SetMaxIdleTime(10)
 
 local SHOP_STATUS = {
-    Lunar = true,
+ --[[    Lunar = true,
     Yannile = true,
     Sarim = true,
     Void = true,
@@ -22,11 +22,11 @@ local SHOP_STATUS = {
     Magebank = true,
     Ooglog = true,
     Redsandstone = true, 
-    Crystalsandstone = true,
+    Crystalsandstone = true, ]]
     TaverlyHerb = true,
-    FortHerbshop = true,
+    --[[ FortHerbshop = true,
     PriffherbShop = true,
-    Buybroads = true, 
+    Buybroads = true,  ]]
     FLIES = true,
 }
 
@@ -505,11 +505,10 @@ local function TaverlyHerb()
     if not shopOpened then return end
     
     BuyFromShopContainer(635)
-    UTILS.countTicks(1)
 
     if SHOP_STATUS.FLIES then
         API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 6893 },50)
-        API.RandomSleep2(300, 500, 600)
+        API.RandomSleep2(2400, 2000, 600)
         UTILS.SleepUntil(isOpen, 10, "Pet shop open")
         BuyFromShopContainer(531)
         SHOP_STATUS.FLIES = false 
