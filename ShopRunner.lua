@@ -1,7 +1,7 @@
 -- Title: Shoprunner
 -- Author: <Matteus>
 -- Description: <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
--- Version: <1.3.1>
+-- Version: <1.3.2>
 -- Category: Dailies
 -- Date : 2025.03.24
 
@@ -21,13 +21,15 @@ local SHOP_STATUS = {
     ZamorakMage = true,
     Magebank = true,
     Ooglog = true,
-    Redsandstone = true, 
+    Redsandstone = true,
+    MenaphosSandstone = true,
     Crystalsandstone = true,
     TaverlyHerb = true,
     FortHerbshop = true,
     PriffherbShop = true,
-    Buybroads = true,
-    FLIES = true,
+    ClaimpotatoCactus = true,
+    Buybroads = true, 
+    Flies = true,
 }
 
 local SHOP_BUY_LIST = {
@@ -456,6 +458,38 @@ local function Redsandstone()
     SHOP_STATUS.Redsandstone = false
 end
 
+local function MenaphosSandstone()
+    local IDS_redSandstone = {67969, 67970, 67971, 67972}
+    local redSandstoneDepleted = {67973}
+    LODESTONES.MENAPHOS.Teleport()
+    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 24661 },50)
+    UTILS.countTicks(1)
+    UTILS.surge()
+    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 24661 },50)
+    UTILS.SleepUntil(function()
+        return API.PInArea(3266, 2, 2729, 2, 0)
+    end, 10, "Arrival at Sophanem  area")
+    UTILS.surge()
+    clickRandomTile(3304, 2757, 2)
+    UTILS.countTicks(2)
+    UTILS.dive(randomizeDiveCoordinates(3294, 2744, 0, 2))
+    clickRandomTile(3320, 2761, 2)
+    UTILS.countTicks(10)
+    UTILS.surge()
+    API.DoAction_Object1(0x39,API.OFF_ACT_GeneralObject_route0,{ 109350 },50)
+    UTILS.SleepUntil(function()
+        return API.PInArea(3330, 1, 2761, 1, 0)
+    end, 20, "Arrival at Sophanem  area")
+    UTILS.countTicks(1)
+    UTILS.surge()
+    API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
+    API.RandomSleep2(600, 600, 600)
+    API.WaitUntilMovingEnds()
+    if UTILS.SleepUntil(checkCues, 150, 'Red Sandstone') then
+    end
+    SHOP_STATUS.MenaphosSandstone = false
+end
+
 local function Crystalsandstone()
     local IDS_redSandstone = {112696, 112697, 112698, 112699,}
     local redSandstoneDepleted = {112700}
@@ -477,7 +511,6 @@ local function Crystalsandstone()
     end
     SHOP_STATUS.Crystalsandstone = false
 end
-
 
 local function TaverlyHerb()
     LODESTONES.TAVERLEY.Teleport()
@@ -572,6 +605,41 @@ local function BuyBurthorpeBroads()
     SHOP_STATUS.Buybroads = false
 end
 
+local function ClaimpotatoCactus()
+    LODESTONES.YANILLE.Teleport()
+    clickRandomTile(2528, 3129, 2)
+    UTILS.countTicks(4)
+    UTILS.surge()
+    API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
+    UTILS.countTicks(2)
+    UTILS.surge()
+    API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
+    UTILS.SleepUntil(isOpen, 20, "Fairy ring open")
+    if not isOpen() then
+        SHOP_STATUS.ClaimpotatoCactus = false
+        return
+    end
+    API.DoAction_Interface(0xffffffff,0xffffffff,1,784,7,-1,API.OFF_ACT_GeneralInterface_route)
+    API.RandomSleep2(200, 300, 100)
+    API.DoAction_Interface(0xffffffff,0xffffffff,1,784,25,-1,API.OFF_ACT_GeneralInterface_route)
+    API.RandomSleep2(200, 300, 100)
+    API.DoAction_Interface(0x2e,0xffffffff,1,784,23,-1,API.OFF_ACT_GeneralInterface_route)
+    UTILS.SleepUntil(function()
+        return API.PInArea(3251, 1, 3095, 1, 0)
+    end, 20, "Arrival Kalphite Queen area")
+    UTILS.countTicks(2)
+    clickRandomTile(3234, 3106, 2)
+    UTILS.dive(randomizeDiveCoordinates(3234, 3106, 0, 1))
+    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 1152 },50)
+    UTILS.SleepUntil(function() return API.Compare2874Status(12, false) end, 20, "Claim potato cactus dialogue")
+    if not isOpen() then
+        SHOP_STATUS.ClaimpotatoCactus = false
+        return
+    end
+    UTILS.countTicks(4)
+    SHOP_STATUS.ClaimpotatoCactus = false
+end
+
 local function PriffherbShop()
     LODESTONES.PRIFDDINAS.Teleport()
     clickRandomTile(2235, 3398, 2)
@@ -630,6 +698,8 @@ while API.Read_LoopyLoop() do
         BuyOoglog() 
     elseif SHOP_STATUS.Redsandstone then
         Redsandstone()
+    elseif SHOP_STATUS.MenaphosSandstone then
+        MenaphosSandstone()
     elseif SHOP_STATUS.Crystalsandstone then
         Crystalsandstone()
     elseif SHOP_STATUS.TaverlyHerb then
@@ -637,7 +707,9 @@ while API.Read_LoopyLoop() do
     elseif SHOP_STATUS.FortHerbshop then
         FortHerbshop()
     elseif SHOP_STATUS.Buybroads then
-        BuyBurthorpeBroads()    
+        BuyBurthorpeBroads()
+    elseif SHOP_STATUS.ClaimpotatoCactus then
+        ClaimpotatoCactus()      
     elseif SHOP_STATUS.PriffherbShop then
         PriffherbShop()
     else        
