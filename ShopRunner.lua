@@ -1,7 +1,7 @@
 -- Title: Shoprunner
 -- Author: <Matteus>
 -- Description: <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
--- Version: <1.3.2>
+-- Version: <1.3.1>
 -- Category: Dailies
 -- Date : 2025.03.24
 
@@ -539,12 +539,12 @@ local function TaverlyHerb()
     
     BuyFromShopContainer(635)
 
-    if SHOP_STATUS.FLIES then
+    if SHOP_STATUS.Flies then
         API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 6893 },50)
         API.RandomSleep2(2400, 2000, 600)
         UTILS.SleepUntil(isOpen, 10, "Pet shop open")
         BuyFromShopContainer(531)
-        SHOP_STATUS.FLIES = false 
+        SHOP_STATUS.Flies = false 
     end
 
     SHOP_STATUS.TaverlyHerb = false
