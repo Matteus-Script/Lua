@@ -1,7 +1,7 @@
 -- Title: Shoprunner
 -- Author: <Matteus>
 -- Description: <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
--- Version: <1.3.2>
+-- Version: <1.3.3>
 -- Category: Dailies
 -- Date : 2025.03.24
 
