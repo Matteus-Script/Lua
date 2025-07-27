@@ -26,7 +26,7 @@ local SHOP_STATUS = {
     FortHerbshop = true,
     PriffherbShop = true,
     ClaimpotatoCactus = true,
-    Buybroads = false, 
+    Buybroads = true, 
     Flies = true,
 }
 
