@@ -410,10 +410,9 @@ local function BuyMagebank()
     if canSurge() then UTILS.surge() else abilityWait() end
     clickRandomTile(3094, 3958, 1)
     UTILS.randomSleep(9000)
-
-    API.DoAction_Object2(0x29, API.OFF_ACT_GeneralObject_route0, {64729}, 50, WPOINT.new(3094, 3958, 0))
+    API.DoAction_Object_valid2(0x29, API.OFF_ACT_GeneralObject_route0, {64729}, 50, WPOINT.new(3094, 3958, 0), true)
     UTILS.randomSleep(3000)
-    API.DoAction_Object2(0x29, API.OFF_ACT_GeneralObject_route0, {64729}, 50, WPOINT.new(3091, 3958, 0))
+    API.DoAction_Object_valid2(0x29, API.OFF_ACT_GeneralObject_route0, {64729}, 50, WPOINT.new(3091, 3958, 0), true)
     UTILS.randomSleep(3000)
 
     Interact:Object("Lever", "Pull")
