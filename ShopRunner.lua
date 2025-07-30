@@ -1,7 +1,7 @@
 -- Title: Shoprunner
 -- Author: <Matteus>
 -- Description: <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
--- Version: <1.3.4>
+-- Version: <1.3.3>
 -- Category: Dailies
 -- Date : 2025.03.24
 
@@ -390,7 +390,7 @@ local function BuyMagebank()
 
     local leverCrossed = UTILS.SleepUntil(function()
         return API.PInArea(3154, 5, 3924, 5, 0)
-    end, 10, "Crossed lever")
+    end, 20, "Crossed lever")
 
     if not leverCrossed then return end
 
@@ -419,7 +419,7 @@ local function BuyMagebank()
 
     local leverCrossedAgain = UTILS.SleepUntil(function()
         return API.PInArea(2539, 5, 4712, 5, 0)
-    end, 10, "Crossed second lever")
+    end, 20, "Crossed second lever")
 
     if not leverCrossedAgain then return end
 
