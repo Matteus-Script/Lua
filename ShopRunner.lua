@@ -1,7 +1,7 @@
 -- Title: Shoprunner
 -- Author: <Matteus>
--- Description: <Buys Runes from pretty much every runeshop + meat at Ooglog + mines crystal sandstone and red sandstone>
--- Version: <1.3.3>
+-- Description: <Buys from most shops (Runes, Meat packs, Broads, Slayer gems, Mines Sandstone, Claims potato cactus)>
+-- Version: <1.3.4>
 -- Category: Dailies
 -- Date : 2025.03.24
 
@@ -28,6 +28,7 @@ local SHOP_STATUS = {
     ClaimpotatoCactus = true,
     Buybroads = true, 
     Flies = true,
+    Mawsandstone = true,
 }
 
 local SHOP_BUY_LIST = {
@@ -309,7 +310,37 @@ local function BuyVarrock()
     SHOP_STATUS.Varrock = false
 end
 
+local subreqs_14 = {
+    { name = "Runes",     value = 5, varbits = {9471} },
+    { name = "Blackjacks", value = 3, varbits = {9469} },
+    { name = "Clothes",    value = 3, varbits = {9470} }
+}
+
+local function isCompleted(subreq)
+    for _, id in ipairs(subreq.varbits) do
+        if API.GetVarbitValue(id) < subreq.value then return false end
+    end
+    return true
+end
+
 local function BuyAlkharid()
+    local runesDone = isCompleted(subreqs_14[1])
+    local blackjacksDone = isCompleted(subreqs_14[2])
+    local clothesDone = isCompleted(subreqs_14[3])
+
+    if not runesDone then
+        print("[RogueTrader] Runes not completed, skipping shop.")
+        SHOP_STATUS.AlKharid = false
+        return
+    elseif runesDone and blackjacksDone and clothesDone then
+        print("[RogueTrader] All subquests completed.")
+    elseif runesDone and (blackjacksDone or clothesDone) then
+        local partials = {}
+        if blackjacksDone then table.insert(partials, "Blackjacks") end
+        if clothesDone then table.insert(partials, "Clothes") end
+        print("[RogueTrader] Partial completion: " .. table.concat(partials, ", "))
+    end
+
     LODESTONES.AL_KHARID.Teleport()
     clickRandomTile(3300, 3211, 2)
     UTILS.countTicks(8)
@@ -320,18 +351,28 @@ local function BuyAlkharid()
     local openedDialogue1 = UTILS.SleepUntil(function()
         return API.Compare2874Status(12, false)
     end, 10, "Ali Morrisane first dialogue")
-
     if not openedDialogue1 then return end
 
     API.RandomSleep2(600, 600, 600)
-    API.KeyboardPress("1", 0, 50)
+    local firstOption
+    if runesDone and not (blackjacksDone or clothesDone) then
+        firstOption = "1" 
+    elseif runesDone and (blackjacksDone or clothesDone) and not (blackjacksDone and clothesDone) then
+        firstOption = "2" 
+    elseif runesDone and blackjacksDone and clothesDone then
+        firstOption = "3" 
+    else
+        firstOption = "1" 
+    end
+    print("[AlKharid] Selecting chat option: " .. firstOption)
+    API.KeyboardPress(firstOption, 0, 50)
     API.RandomSleep2(600, 600, 600)
     API.KeyboardPress("3", 0, 50)
 
     local shopOpened1 = UTILS.SleepUntil(isOpen, 10, "Ali Morrisane first shop open")
     if not shopOpened1 then return end
 
-    BuyFromShopContainer(313) 
+    BuyFromShopContainer(313)
 
     Interact:NPC("Ali Morrisane", "Trade")
     UTILS.randomSleep(1000)
@@ -339,18 +380,17 @@ local function BuyAlkharid()
     local openedDialogue2 = UTILS.SleepUntil(function()
         return API.Compare2874Status(12, false)
     end, 10, "Ali Morrisane second dialogue")
-
     if not openedDialogue2 then return end
 
     API.RandomSleep2(600, 600, 600)
-    API.KeyboardPress("1", 0, 50)
+    API.KeyboardPress(firstOption, 0, 50)
     API.RandomSleep2(600, 600, 600)
     API.KeyboardPress("4", 0, 50)
 
     local shopOpened2 = UTILS.SleepUntil(isOpen, 10, "Ali Morrisane second shop open")
     if not shopOpened2 then return end
 
-    BuyFromShopContainer(314) 
+    BuyFromShopContainer(314)
     SHOP_STATUS.AlKharid = false
 end
 
@@ -689,6 +729,37 @@ local function PriffherbShop()
     SHOP_STATUS.PriffherbShop = false
 end
 
+local function Mawsandstone()
+    local IDS_crystalSandstone = {112696, 112697, 112698, 112699}
+    local IDS_Maw = {94273}
+
+    if not API.PInArea(2237, 3, 3400, 3, 0) then
+        LODESTONES.PRIFDDINAS.Teleport()
+        clickRandomTile(2235, 3398, 2)
+        UTILS.countTicks(3)
+        if canSurge() then UTILS.surge() else abilityWait() end
+        clickRandomTile(2235, 3398, 2)
+        UTILS.countTicks(3)
+        if canSurge() then UTILS.surge() else abilityWait() end
+        clickRandomTile(2237, 3400, 2)
+        UTILS.SleepUntil(function()
+            return API.PInArea(2237, 3, 3400, 3, 0)
+        end, 30, "Arriving outside Resource dungeon")
+    end
+    API.DoAction_Object1(0x39, API.OFF_ACT_GeneralObject_route0, {94320}, 50)
+    UTILS.SleepUntil(function()
+        return API.PInArea(1374, 3, 4610, 3, 0)
+    end, 30, "Waiting to enter Edimmu Resource dungeon")
+    API.RandomSleep2(1200, 1000, 500)
+    API.DoAction_Object_valid1(0x29, API.OFF_ACT_GeneralObject_route0, IDS_Maw, 50, true)
+    API.RandomSleep2(600, 700, 500)
+    if canSurge() then UTILS.surge() else abilityWait() end
+    API.DoAction_Object_valid1(0x29, API.OFF_ACT_GeneralObject_route0, IDS_Maw, 50, true)
+    API.RandomSleep2(7000, 6000, 1000) 
+    API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_crystalSandstone, 50, true)
+    UTILS.SleepUntil(checkCues, 150, 'Crystal Sandstone')
+    SHOP_STATUS.Mawsandstone = false
+end
 
 if API.CacheEnabled then
     print ("Cache is enabled, running the script.")
@@ -734,6 +805,8 @@ while API.Read_LoopyLoop() do
         ClaimpotatoCactus()      
     elseif SHOP_STATUS.PriffherbShop then
         PriffherbShop()
+    elseif SHOP_STATUS.Mawsandstone then
+        Mawsandstone()
     else        
         print("Finished buying from all supported shops")
         API.Write_LoopyLoop(false)
