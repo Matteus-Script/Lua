@@ -1,7 +1,7 @@
 -- Title: Shoprunner
 -- Author: <Matteus>
 -- Description: <Buys from most shops (Runes, Meat packs, Broads, Slayer gems, Mines Sandstone, Claims potato cactus)>
--- Version: <1.3.4>
+-- Version: <1.3.5>
 -- Category: Dailies
 -- Date : 2025.03.24
 
@@ -666,40 +666,101 @@ local function BuyBurthorpeBroads()
     SHOP_STATUS.Buybroads = false
 end
 
+local desert_subreqs = {
+    { name = "Faster than a Speeding Bullet", value = 1, varbits = {17760} },
+    { name = "So Su Me", value = 1, varbits = {17761} },
+    { name = "A Bridge Not Far", value = 1, varbits = {17762} },
+    { name = "Heathen Idle", value = 1, varbits = {17763} },
+    { name = "Away with the Kalphites", value = 1, varbits = {17764} },
+    { name = "All Square", value = 1, varbits = {17765} },
+    { name = "Goat Harralander? (all steps)", value = 1, varbits = {17766}, steps = {0,1,2,3,4,5} },
+    { name = "Taken for Granite", value = 1, varbits = {17767} },
+    { name = "Unbeetleable", value = 1, varbits = {17768} },
+    { name = "An Teak", value = 1, varbits = {17769} },
+    { name = "Overcut", value = 1, varbits = {17770} },
+}
+
+local function isDesertSubreqCompleted(subreq)
+    if subreq.steps then
+        local value = API.GetVarbitValue(subreq.varbits[1])
+        for _, step in ipairs(subreq.steps) do
+            if (value & (1 << step)) == 0 then
+                return false
+            end
+        end
+        return true
+    else
+        for _, varbit_id in ipairs(subreq.varbits) do
+            if API.GetVarbitValue(varbit_id) < subreq.value then
+                return false
+            end
+        end
+        return true
+    end
+end
+
+local function getDesertSummary()
+    local completed, incomplete = 0, {}
+    for _, s in ipairs(desert_subreqs) do
+        if isDesertSubreqCompleted(s) then completed = completed + 1 else table.insert(incomplete, s.name) end
+    end
+    return completed, #desert_subreqs, incomplete
+end
+
+local function isFairyTale3Completed()
+    local fairyTale3 = { name = "Fairy Tale III", value = 180, varbits = {9928} }
+    for _, id in ipairs(fairyTale3.varbits) do
+        if API.GetVarbitValue(id) < fairyTale3.value then
+            return false
+        end
+    end
+    return true
+end
+
 local function ClaimpotatoCactus()
-    LODESTONES.YANILLE.Teleport()
-    clickRandomTile(2528, 3129, 2)
-    UTILS.countTicks(4)
-    if canSurge() then UTILS.surge() else abilityWait() end
-    API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
-    UTILS.countTicks(2)
-    if canSurge() then UTILS.surge() else abilityWait() end
-    API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
-    UTILS.SleepUntil(isOpen, 20, "Fairy ring open")
-    if not isOpen() then
+    local completed, total = getDesertSummary()
+    local fairyTale3Done = isFairyTale3Completed()
+    print("[ClaimpotatoCactus] Desert Medium complete:", completed == total, string.format("(%d/%d)", completed, total))
+    print("[ClaimpotatoCactus] Fairy Tale III complete:", fairyTale3Done)
+    if completed == total and fairyTale3Done then
+        print("[ClaimpotatoCactus] Both requirements met. Proceeding.")
+        LODESTONES.YANILLE.Teleport()
+        clickRandomTile(2528, 3129, 2)
+        UTILS.countTicks(4)
+        if canSurge() then UTILS.surge() else abilityWait() end
+        API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
+        UTILS.countTicks(2)
+        if canSurge() then UTILS.surge() else abilityWait() end
+        API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
+        UTILS.SleepUntil(isOpen, 20, "Fairy ring open")
+        if not isOpen() then
+            SHOP_STATUS.ClaimpotatoCactus = false
+            return
+        end
+        API.RandomSleep2(400, 300, 100)
+        API.DoAction_Interface(0xffffffff,0xffffffff,1,784,7,-1,API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(400, 300, 100)
+        API.DoAction_Interface(0xffffffff,0xffffffff,1,784,25,-1,API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(400, 300, 100)
+        API.DoAction_Interface(0x2e,0xffffffff,1,784,23,-1,API.OFF_ACT_GeneralInterface_route)
+        UTILS.SleepUntil(function()
+            return API.PInArea(3251, 1, 3095, 1, 0)
+        end, 20, "Arrival Kalphite Queen area")
+        UTILS.countTicks(2)
+        clickRandomTile(3234, 3106, 2)
+        if canDive() then UTILS.dive(randomizeDiveCoordinates(3234, 3106, 0, 1)) else abilityWait() end
+        API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 1152 },50)
+        UTILS.SleepUntil(function() return API.Compare2874Status(12, false) end, 20, "Claim potato cactus dialogue")
+        if not isOpen() then
+            SHOP_STATUS.ClaimpotatoCactus = false
+            return
+        end
+        UTILS.countTicks(4)
         SHOP_STATUS.ClaimpotatoCactus = false
-        return
-    end
-    API.RandomSleep2(400, 300, 100)
-    API.DoAction_Interface(0xffffffff,0xffffffff,1,784,7,-1,API.OFF_ACT_GeneralInterface_route)
-    API.RandomSleep2(400, 300, 100)
-    API.DoAction_Interface(0xffffffff,0xffffffff,1,784,25,-1,API.OFF_ACT_GeneralInterface_route)
-    API.RandomSleep2(400, 300, 100)
-    API.DoAction_Interface(0x2e,0xffffffff,1,784,23,-1,API.OFF_ACT_GeneralInterface_route)
-    UTILS.SleepUntil(function()
-        return API.PInArea(3251, 1, 3095, 1, 0)
-    end, 20, "Arrival Kalphite Queen area")
-    UTILS.countTicks(2)
-    clickRandomTile(3234, 3106, 2)
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(3234, 3106, 0, 1)) else abilityWait() end
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 1152 },50)
-    UTILS.SleepUntil(function() return API.Compare2874Status(12, false) end, 20, "Claim potato cactus dialogue")
-    if not isOpen() then
+    else
+        print("[ClaimpotatoCactus] Skipping: Not all Desert Medium tasks and Fairy Tale III are completed.")
         SHOP_STATUS.ClaimpotatoCactus = false
-        return
     end
-    UTILS.countTicks(4)
-    SHOP_STATUS.ClaimpotatoCactus = false
 end
 
 local function PriffherbShop()
@@ -729,7 +790,17 @@ local function PriffherbShop()
     SHOP_STATUS.PriffherbShop = false
 end
 
+local function isDungeoneeringAtLeast(level)
+    local dung = API.GetSkillByName("DUNGEONEERING")
+    return dung and dung.level and dung.level >= level
+end
+
 local function Mawsandstone()
+    if not isDungeoneeringAtLeast(115) then
+        print("[Mawsandstone] Skipping: Dungeoneering level is below 115.")
+        SHOP_STATUS.Mawsandstone = false
+        return
+    end
     local IDS_crystalSandstone = {112696, 112697, 112698, 112699}
     local IDS_Maw = {94273}
 
