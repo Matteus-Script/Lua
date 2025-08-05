@@ -10,7 +10,7 @@ local LODESTONES = require("lodestones")
 local UTILS = require("utils")
 
 local SHOP_STATUS = {
-    Lunar = true,
+   --[[  Lunar = true,
     Yannile = true,
     Sarim = true,
     Void = true,
@@ -18,7 +18,7 @@ local SHOP_STATUS = {
     AlKharid = true,
     ZamorakMage = true,
     Magebank = true,
-    Ooglog = true,
+    Ooglog = true, ]]
     Redsandstone = true,
     MenaphosSandstone = true,
     Crystalsandstone = true,
@@ -112,7 +112,7 @@ local function abilityWait()
     API.RandomSleep2(2000, 3000, 500)
 end
 local function canDive()
-    local dive = API.GetABs_name("Dive")
+    local dive = API.GetABs_name("Dive", true)  
     if dive and dive.cooldown_timer < 1 and dive.enabled == true then
         return true
     else
@@ -121,7 +121,7 @@ local function canDive()
 end
 
 local function canSurge()
-    local surge = API.GetABs_name("Surge")
+    local surge = API.GetABs_name("Surge", true) 
     if surge and surge.cooldown_timer < 1 and surge.enabled == true then
         return true
     else
