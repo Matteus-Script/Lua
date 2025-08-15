@@ -10,7 +10,7 @@ local LODESTONES = require("lodestones")
 local UTILS = require("utils")
 
 local SHOP_STATUS = {
-   --[[  Lunar = true,
+    Lunar = true,
     Yannile = true,
     Sarim = true,
     Void = true,
@@ -18,7 +18,7 @@ local SHOP_STATUS = {
     AlKharid = true,
     ZamorakMage = true,
     Magebank = true,
-    Ooglog = true, ]]
+    Ooglog = true,
     Redsandstone = true,
     MenaphosSandstone = true,
     Crystalsandstone = true,
@@ -532,11 +532,14 @@ local function MenaphosSandstone()
     end, 10, "Arrival at Sophanem  area")
     if canSurge() then UTILS.surge() else abilityWait() end
     clickRandomTile(3304, 2757, 2)
-    UTILS.countTicks(2)
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(3294, 2744, 0, 2)) else abilityWait() end
+    API.RandomSleep2(300, 300, 300)
+    if canDive() then UTILS.dive(randomizeDiveCoordinates(3290, 2729, 0, 2)) else abilityWait() end
     clickRandomTile(3320, 2761, 2)
     UTILS.countTicks(10)
     if canSurge() then UTILS.surge() else abilityWait() end
+    API.DoAction_Object1(0x39,API.OFF_ACT_GeneralObject_route0,{ 109350 },50)
+    UTILS.countTicks(8)
+    if canDive() then UTILS.dive(randomizeDiveCoordinates(3321, 2761, 0, 1)) else abilityWait() end
     API.DoAction_Object1(0x39,API.OFF_ACT_GeneralObject_route0,{ 109350 },50)
     UTILS.SleepUntil(function()
         return API.PInArea(3330, 1, 2761, 1, 0)
