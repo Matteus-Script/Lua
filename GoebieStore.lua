@@ -1,16 +1,9 @@
-
 -- Title: GoebieStore
 -- Author: <Matteus>
 -- Description: <Skills and buys supplies from the Goebie store>
 -- Version: <1.11>
 -- Category: Skilling
 -- Date : 2025.03.24
-
---[[v1.10 - 31-03-2025
-    - Added Fletching methods ( Logs>Unstrung>Bows) (logs>shafts>Headless>Arrows). -- note if crafting unstrung or shafts from logs make sure you make 1 first yourself so it remembers last made item 
-    v1.11 - 26-05-2025 
-    - Added Elidinis book support and some other small changes
-]]--
 
 local API = require("api")
 local UTILS = require("utils")
@@ -27,7 +20,7 @@ local lastPotionTime = 0
 local lastCycleTime = os.time()
 local bankingStateCalls = 0
 local firstLoop = true
-local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC", "DIVINATION", "PRAYER", "FIREMAKING", "COOKING", "NECROMANCY", }
+local trackedSkill = {"HERBLORE", "CRAFTING", "FLETCHING", "MAGIC", "DIVINATION", "PRAYER", "FIREMAKING", "COOKING", "NECROMANCY", "INVENTION",  }
 local startXp = {}
 local lastXpTime = os.time()
 
@@ -162,7 +155,7 @@ local function DO_ElidinisSouls()
             print("Dive is ready — executing dive.")
             local tile = mimicSoul.Tile_XYZ
             API.DoAction_Dive_Tile(WPOINT.new(tile.x, tile.y, tile.z))
-            API.RandomSleep2(1200, 550, 650)
+            API.RandomSleep2(3200, 550, 650)
             triedDive = true
         end
         while API.ReadAllObjectsArray({1}, {18222}, {})[1] do
@@ -174,39 +167,23 @@ local function DO_ElidinisSouls()
             if (not triedDive) or (distance > 1.5) then
                  print("Walking to Mimicking.")
                  API.DoAction_WalkerF(FFPOINT.new(tile.x, tile.y, tile.z))
-                 API.RandomSleep2(1200, 550, 650)
+                 API.RandomSleep2(600, 400, 200)
                 end
 
                 API.RandomSleep2(200, 50, 50)
             end
         end
 
-       -- Vengeful Soul
-        local soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
-        local initialRetreatDone = false
+    -- Vengeful Soul
+    local soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
 
-        while soul do
+    while soul do
         foundSomething = true
         local player = API.PlayerCoord()
         local dx, dy = soul.Tile_XYZ.x - player.x, soul.Tile_XYZ.y - player.y
         local currentDist = math.sqrt(dx * dx + dy * dy)
 
-        if not initialRetreatDone and currentDist <= 15 then
-            print("Running far from Vengeful Soul...")
-            for attempt = 1, 10 do
-                local randX, randY = math.random(-20, 20), math.random(-20, 20)
-                local targetX, targetY = player.x + randX, player.y + randY
-                local distFromSoul = math.sqrt((targetX - soul.Tile_XYZ.x)^2 + (targetY - soul.Tile_XYZ.y)^2)
-
-                if distFromSoul > 15 then
-                    API.DoAction_Tile(WPOINT.new(targetX, targetY, player.z))
-                    initialRetreatDone = true
-                    break
-                end
-            end
-            API.RandomSleep2(1800, 150, 150)
-
-         elseif currentDist <= 7 then
+        if currentDist <= 7 then
             print("Vengeful Soul is close, dodging...")
             local escapeTile = getEscapeTile(player, soul, 6)
             if escapeTile then
@@ -216,16 +193,17 @@ local function DO_ElidinisSouls()
                 API.DoAction_Tile(fallbackTile)
             end
             API.RandomSleep2(1200, 100, 100)
-
         else
             API.RandomSleep2(300, 100, 100)
         end
 
         soul = API.ReadAllObjectsArray({1}, {17802}, {})[1]
-        end
-            if not foundSomething then break end
+    end
+
+    if not foundSomething then return end
     end
 end
+
 
 local function banking()
     if not shouldBank() then return end
@@ -254,19 +232,22 @@ local function banking()
         uniqueItemCount = uniqueItemCount + 1
     end
 
-    if uniqueItemCount < 1 then
+    --[[ if uniqueItemCount < 1 then
         print("Error: Less than two different items found after banking. Stopping script.")
         API.Write_LoopyLoop(false)
-    end
+    end ]]
 end
 
 local function banking2()
     API.DoAction_NPC(0x5, API.OFF_ACT_InteractNPC_route, { 21393 }, 50)
     UTILS.SleepUntil(isBankopen, 30, "Bank open")
 
+    API.RandomSleep2(300, 250, 100)
+
     if isBankopen() then
-        API.RandomSleep2(100, 50, 50)
+        API.RandomSleep2(300, 250, 100)
         API.KeyboardPress("3", 0, 50)
+        API.RandomSleep2(300, 250, 100)
      end
 end
 
@@ -436,8 +417,11 @@ local function checkForVialOrUnfItems()
             string.find(item.textitem, "scale") or
             string.find(item.textitem, "energy") or
             string.find(item.textitem, "stick") or
+            string.find(item.textitem, "%((unfired)%)") or
             string.find(item.textitem, "necroplasm") or
-            string.find(item.textitem, "milk")
+            string.find(item.textitem, "refiner") or
+            string.find(item.textitem, "milk") or
+            string.find(item.textitem, "amulet")
         ) then
             local cleanedName = string.gsub(item.textitem, "<.->", "")
             print("Found item: " .. cleanedName .. " (" .. item.itemid1 .. ")")
@@ -453,6 +437,11 @@ end
 local function isLunarSpellbook()
     local state = API.VB_FindPSettinOrder(4).state
     return (state & 0x3) == 2
+end
+
+local function isNormalSpellbook()
+    local state = API.VB_FindPSettinOrder(4).state
+    return (state & 0x3) == 0
 end
 
 local function hasRunes(runeReqs)
@@ -476,7 +465,7 @@ local function hasRunes(runeReqs)
     end
 
     for id, amount in pairs(runeReqs) do
-        if not skipRunes[id] and API.InvStackSize(id) < amount then
+        if not skipRunes[id] and Inventory:InvStackSize(id) < amount then
             print("Missing runes: id=" .. id .. " required=" .. amount)
             return false
         end
@@ -510,7 +499,46 @@ local function performCraftingAction()
         return
     end
 
-    if itemName:find("decorated") then
+    local amuletCount = Inventory:InvItemcount(39338)
+    if amuletCount > 0 then
+        if not isNormalSpellbook() then
+            print("Not on Normal spellbook")
+            API.Write_LoopyLoop(false)
+            return
+        end
+        local runeReqs = { [556] = 3, [564] = 1 }
+        if not hasRunes(runeReqs) then
+            print("Missing required runes for Enchant Amulet spell.")
+            API.Write_LoopyLoop(false)
+            return
+        end
+        API.DoAction_Interface(0x9e,0xffffffff,0,1461,1,29,API.OFF_ACT_Bladed_interface_route) 
+        API.RandomSleep2(300, 300, 100)
+        API.DoAction_Inventory1(39338,0,0,API.OFF_ACT_GeneralInterface_route1)
+        if waitCraftingInterface() then
+            API.KeyboardPress32(0x20, 0)
+            UTILS.countTicks(5)
+        end
+        return
+    end
+
+    if itemName:find("amulet") then
+        if not isLunarSpellbook() then
+            print("Not on Lunar spellbook")
+            API.Write_LoopyLoop(false)
+            return
+        end
+        local runeReqs = { [555] = 5, [557] = 10, [9075] = 2 }
+        if not hasRunes(runeReqs) then
+            print("Missing required runes for String Jewelry.")
+            API.Write_LoopyLoop(false)
+            return
+        end
+        API.DoAction_Interface(0xffffffff,0xffffffff,1,1461,1,131,API.OFF_ACT_GeneralInterface_route)
+        return
+    end
+
+    if itemName:find("%((unfired)%)") then
         if not isLunarSpellbook() then
             print("Not on Lunar spellbook")
             API.Write_LoopyLoop(false)
@@ -526,15 +554,13 @@ local function performCraftingAction()
         if waitCraftingInterface() then
             API.KeyboardPress32(0x20, 0)
             UTILS.countTicks(5)
-        else
-            API.Write_LoopyLoop(false)
         end
         return
     end
 
     if  itemName:find("miasma rune") or
         itemName:find("mud rune") or
-        itemName:find("unicorn horn") or
+        itemName:find("%((unicorn horn))%") or
         itemName:find("scale") or
         itemName:find("bird's nest") then
             if not isLunarSpellbook() then
@@ -553,17 +579,22 @@ local function performCraftingAction()
             API.DoAction_Inventory1(unfItem, 0, 0, API.OFF_ACT_GeneralInterface_route1)
             return
     end
-
+    
     if itemName:find("energy") then
-        if API.InvStackSize(unfItem) < 120 then
+        if Inventory:InvStackSize(unfItem) < 120 then
             print("Out of energy, stopping.")
+            API.Write_LoopyLoop(false)
+            return
+        end
+        if not API.InvItemcount_String("necklace") or API.InvItemcount_String("necklace") < 1 then
+            print("No necklace found in inventory, stopping.")
             API.Write_LoopyLoop(false)
             return
         end
     end
 
     if itemName:find("necroplasm") then
-        if API.InvStackSize(unfItem) < 20 then
+        if Inventory:InvStackSize(unfItem) < 20 then
             print("Out of necroplasm, stopping.")
             API.Write_LoopyLoop(false)
             return
@@ -639,7 +670,9 @@ while API.Read_LoopyLoop() do
             performCraftingAction()
             API.DoRandomEvents()
 
-            while API.isProcessing() do
+            while API.isProcessing() 
+            --or API.CheckAnim(50) 
+            do
                 UTILS.randomSleep(100)
                 API.DoRandomEvents()
                 DO_ElidinisSouls()
