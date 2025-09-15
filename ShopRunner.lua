@@ -524,15 +524,16 @@ local function MenaphosSandstone()
     local redSandstoneDepleted = {67973}
     LODESTONES.MENAPHOS.Teleport()
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 24661 },50)
-    UTILS.countTicks(1)
+    API.RandomSleep2(300, 400, 100)
     if canSurge() then UTILS.surge() else abilityWait() end
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 24661 },50)
     UTILS.SleepUntil(function()
         return API.PInArea(3266, 2, 2729, 2, 0)
     end, 10, "Arrival at Sophanem  area")
+    API.RandomSleep2(300, 400, 100)
     if canSurge() then UTILS.surge() else abilityWait() end
     clickRandomTile(3304, 2757, 2)
-    API.RandomSleep2(300, 300, 300)
+    API.RandomSleep2(300, 400, 100)
     if canDive() then UTILS.dive(randomizeDiveCoordinates(3290, 2729, 0, 2)) else abilityWait() end
     clickRandomTile(3320, 2761, 2)
     UTILS.countTicks(10)
@@ -547,7 +548,7 @@ local function MenaphosSandstone()
     UTILS.countTicks(1)
     if canSurge() then UTILS.surge() else abilityWait() end
     API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
-    API.RandomSleep2(600, 600, 600)
+    API.RandomSleep2(300, 400, 100)
     API.WaitUntilMovingEnds()
     if UTILS.SleepUntil(checkCues, 150, 'Red Sandstone') then
     end
@@ -641,7 +642,7 @@ local function FortHerbshop()
         UTILS.SleepUntil(isOpen, 10, "Fort Herb shop open")
         if not isOpen() then break end
         BuyFromShopContainer(945)
-        if not API.InvFull_() then break end
+        if not Inventory:IsFull() then break end
         bankSequence()
     end
 
