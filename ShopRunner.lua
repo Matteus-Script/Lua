@@ -120,6 +120,14 @@ local function canDive()
     end
 end
 
+local function dive(destinationTile)
+  local diveAB = API.GetABs_name("Dive", true)  
+  if diveAB ~= nil then
+    return API.DoAction_Dive_Tile(destinationTile)
+  end
+  return false
+end
+
 local function canSurge()
     local surge = API.GetABs_name("Surge", true) 
     if surge and surge.cooldown_timer < 1 and surge.enabled == true then
@@ -182,7 +190,7 @@ local function Lunar()
     LODESTONES.LUNAR_ISLE.Teleport()
     clickRandomTile(2092, 3931, 2)
     UTILS.countTicks(8)
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(2100, 3929, 0, 1)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(2100, 3929, 0, 1)) else abilityWait() end
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {4512}, 50)
     UTILS.countTicks(1)
     if canSurge() then UTILS.surge() else abilityWait() end
@@ -215,7 +223,7 @@ local function buyMagesGuild()
     clickRandomTile(2565, 3091, 2)
     UTILS.countTicks(3)
     if canSurge() then UTILS.surge() else abilityWait() end
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(2573, 3092, 0, 2)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(2573, 3092, 0, 2)) else abilityWait() end
     API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
     UTILS.countTicks(1)
     if canSurge() then UTILS.surge() else abilityWait() end
@@ -243,14 +251,14 @@ end
 
 local function BuySarim()
     LODESTONES.PORT_SARIM.Teleport()
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(3021, 3227, 0, 1)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(3021, 3227, 0, 1)) else abilityWait() end
     clickRandomTile(3019, 3259, 2)
     UTILS.countTicks(3)
     if canSurge() then UTILS.surge() else abilityWait() end
     clickRandomTile(3018, 3259, 1)
     local atdoor = UTILS.SleepUntil(function()
         return API.PInArea(3019, 3, 3258, 3)
-    end, 10, "reaching Sarim shop door")
+    end, 20, "reaching Sarim shop door")
     OpenDoor(40109, 3016, 3259, 40108, 3017, 3259)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {583}, 50)
     UTILS.randomSleep(1000)
@@ -289,7 +297,7 @@ local function BuyVarrock()
     clickRandomTile(3218, 3390, 2)
     UTILS.countTicks(2)
     if canSurge() then UTILS.surge() end
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(3233, 3390, 0, 2)) end
+    if canDive() then dive(randomizeDiveCoordinates(3233, 3390, 0, 2)) end
     UTILS.countTicks(1)
     if canSurge() then UTILS.surge() end
     clickRandomTile(3253, 3397, 1)
@@ -344,7 +352,7 @@ local function BuyAlkharid()
     LODESTONES.AL_KHARID.Teleport()
     clickRandomTile(3300, 3211, 2)
     UTILS.countTicks(8)
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(3300, 3211, 0, 1)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(3300, 3211, 0, 1)) else abilityWait() end
 
     Interact:NPC("Ali Morrisane", "Trade")
 
@@ -410,7 +418,7 @@ local function BuyZamorakMage()
     if canSurge() then UTILS.surge() else abilityWait() end
     clickRandomTile(3093, 3556, 2)
     UTILS.countTicks(3)
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(3109, 3557, 0, 2)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(3109, 3557, 0, 2)) else abilityWait() end
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {2257}, 50)
     UTILS.randomSleep(1000)
 
@@ -484,7 +492,7 @@ local function BuyOoglog()
     clickRandomTile(2523, 2837, 2)
     UTILS.countTicks(4)
     if canSurge() then UTILS.surge() else abilityWait() end
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(2560, 2849, 0, 2)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(2560, 2849, 0, 2)) else abilityWait() end
     clickRandomTile(2560, 2849, 2)
     UTILS.randomSleep(3000)
     if canSurge() then UTILS.surge() else abilityWait() end
@@ -510,7 +518,7 @@ local function Redsandstone()
     clickRandomTile(2586, 2878, 2)
     UTILS.countTicks(5)
     if canSurge() then UTILS.surge() else abilityWait() end
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(2586, 2878, 0, 2)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(2586, 2878, 0, 2)) else abilityWait() end
     API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
     API.RandomSleep2(600, 600, 600)
     API.WaitUntilMovingEnds()
@@ -534,13 +542,13 @@ local function MenaphosSandstone()
     if canSurge() then UTILS.surge() else abilityWait() end
     clickRandomTile(3304, 2757, 2)
     API.RandomSleep2(300, 400, 100)
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(3290, 2729, 0, 2)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(3290, 2729, 0, 2)) else abilityWait() end
     clickRandomTile(3320, 2761, 2)
     UTILS.countTicks(10)
     if canSurge() then UTILS.surge() else abilityWait() end
     API.DoAction_Object1(0x39,API.OFF_ACT_GeneralObject_route0,{ 109350 },50)
     UTILS.countTicks(8)
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(3321, 2761, 0, 1)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(3321, 2761, 0, 1)) else abilityWait() end
     API.DoAction_Object1(0x39,API.OFF_ACT_GeneralObject_route0,{ 109350 },50)
     UTILS.SleepUntil(function()
         return API.PInArea(3330, 1, 2761, 1, 0)
@@ -565,7 +573,7 @@ local function Crystalsandstone()
     clickRandomTile(2144, 3351, 1)
     UTILS.countTicks(5)
     clickRandomTile(2144, 3351, 1)
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(2142, 3361, 0, 1)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(2142, 3361, 0, 1)) else abilityWait() end
     UTILS.countTicks(1)
     if canSurge() then UTILS.surge() else abilityWait() end
     clickRandomTile(2144, 3351, 1)
@@ -595,7 +603,7 @@ local function TaverlyHerb()
     UTILS.countTicks(5)
     if canSurge() then UTILS.surge() else abilityWait() end
     clickRandomTile(2922, 3429, 2)
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(2921, 3431, 0, 1)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(2921, 3431, 0, 1)) else abilityWait() end
     UTILS.countTicks(1)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route4, {14854}, 50)
 
@@ -660,7 +668,7 @@ end
 
 local function BuyBurthorpeBroads()
     LODESTONES.BURTHOPE.Teleport()
-    if canDive() then UTILS.dive(randomizeDiveCoordinates(2891, 3547, 0, 1)) else abilityWait() end
+    if canDive() then dive(randomizeDiveCoordinates(2891, 3547, 0, 1)) else abilityWait() end
     API.RandomSleep2(100, 200, 50)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {8480}, 50)
     API.RandomSleep2(300, 500, 600)
@@ -752,7 +760,7 @@ local function ClaimpotatoCactus()
         end, 20, "Arrival Kalphite Queen area")
         UTILS.countTicks(2)
         clickRandomTile(3234, 3106, 2)
-        if canDive() then UTILS.dive(randomizeDiveCoordinates(3234, 3106, 0, 1)) else abilityWait() end
+        if canDive() then dive(randomizeDiveCoordinates(3234, 3106, 0, 1)) else abilityWait() end
         API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 1152 },50)
         UTILS.SleepUntil(function() return API.Compare2874Status(12, false) end, 20, "Claim potato cactus dialogue")
         if not isOpen() then
