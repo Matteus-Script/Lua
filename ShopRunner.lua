@@ -11,7 +11,7 @@ local UTILS = require("utils")
 
 local SHOP_STATUS = {
     Viswax = true,
-    -Lunar = true,
+    Lunar = true,
     Yannile = true,
     Sarim = true,
     Void = true,
