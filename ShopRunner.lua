@@ -1,7 +1,7 @@
 -- Title: Shoprunner
 -- Author: <Matteus>
 -- Description: <Buys from most shops (Runes, Meat packs, Broads, Slayer gems, Mines Sandstone, Claims potato cactus)>
--- Version: <1.3.5>
+-- Version: <1.4>
 -- Category: Dailies
 -- Date : 2025.03.24
 
@@ -10,7 +10,8 @@ local LODESTONES = require("lodestones")
 local UTILS = require("utils")
 
 local SHOP_STATUS = {
-    Lunar = true,
+    Viswax = true,
+    --[[ Lunar = true,
     Yannile = true,
     Sarim = true,
     Void = true,
@@ -28,7 +29,7 @@ local SHOP_STATUS = {
     ClaimpotatoCactus = true,
     Buybroads = true, 
     Flies = true,
-    Mawsandstone = true,
+    Mawsandstone = true, ]]
 }
 
 local SHOP_BUY_LIST = {
@@ -137,8 +138,24 @@ local function canSurge()
     end
 end
 
+local function surge()
+  local surgeAB = API.GetABs_name("Surge", true)
+  if surgeAB ~= nil then
+    return API.DoAction_Ability_Direct(surgeAB, 1, API.OFF_ACT_GeneralInterface_route)
+  end
+  return false
+end
+
 local function isOpen()
-    return API.Compare2874Status(40, false) or API.Compare2874Status(18, false)
+    return API.Compare2874Status(40, false) or API.Compare2874Status(18, false) or API.Compare2874Status(24, false) 
+end
+
+local function CapeOpen()
+    return API.Compare2874Status(12, false)
+end
+
+local function BankOpen()
+    return API.Compare2874Status(24, false)
 end
 
 local function OpenDoor(openDoorID, openX, openY, closedDoorID, closedX, closedY)
@@ -193,7 +210,7 @@ local function Lunar()
     if canDive() then dive(randomizeDiveCoordinates(2100, 3929, 0, 1)) else abilityWait() end
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {4512}, 50)
     UTILS.countTicks(1)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {4512}, 50)
 
     UTILS.SleepUntil(function()
@@ -222,11 +239,11 @@ local function buyMagesGuild()
 
     clickRandomTile(2565, 3091, 2)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     if canDive() then dive(randomizeDiveCoordinates(2573, 3092, 0, 2)) else abilityWait() end
     API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
     UTILS.countTicks(1)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
 
     local insideGuild = UTILS.SleepUntil(inMagesGuild, 10, "entering Mage Guild")
@@ -254,7 +271,7 @@ local function BuySarim()
     if canDive() then dive(randomizeDiveCoordinates(3021, 3227, 0, 1)) else abilityWait() end
     clickRandomTile(3019, 3259, 2)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(3018, 3259, 1)
     local atdoor = UTILS.SleepUntil(function()
         return API.PInArea(3019, 3, 3258, 3)
@@ -296,10 +313,10 @@ local function BuyVarrock()
     LODESTONES.VARROCK.Teleport()
     clickRandomTile(3218, 3390, 2)
     UTILS.countTicks(2)
-    if canSurge() then UTILS.surge() end
+    if canSurge() then surge() end
     if canDive() then dive(randomizeDiveCoordinates(3233, 3390, 0, 2)) end
     UTILS.countTicks(1)
-    if canSurge() then UTILS.surge() end
+    if canSurge() then surge() end
     clickRandomTile(3253, 3397, 1)
 
     local reachedShop = UTILS.SleepUntil(function()
@@ -415,7 +432,7 @@ local function BuyZamorakMage()
     UTILS.countTicks(2)
     clickRandomTile(3093, 3556, 2)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(3093, 3556, 2)
     UTILS.countTicks(3)
     if canDive() then dive(randomizeDiveCoordinates(3109, 3557, 0, 2)) else abilityWait() end
@@ -445,17 +462,17 @@ local function BuyMagebank()
     UTILS.randomSleep(1000)
     clickRandomTile(3158, 3948, 2)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(3158, 3948, 2)
     Interact:Object("Web", "Slash")
     UTILS.randomSleep(5000)
 
     clickRandomTile(3120, 3957, 2)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(3094, 3958, 1)
     UTILS.countTicks(4)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(3094, 3958, 1)
     UTILS.randomSleep(9000)
     API.DoAction_Object_valid2(0x29, API.OFF_ACT_GeneralObject_route0, {64729}, 50, WPOINT.new(3094, 3958, 0), true)
@@ -485,17 +502,17 @@ local function BuyOoglog()
     LODESTONES.OOGLOG.Teleport()
     clickRandomTile(2508, 2837, 2)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(2508, 2837, 2)
     UTILS.randomSleep(3000)
     UTILS.countTicks(3)
     clickRandomTile(2523, 2837, 2)
     UTILS.countTicks(4)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     if canDive() then dive(randomizeDiveCoordinates(2560, 2849, 0, 2)) else abilityWait() end
     clickRandomTile(2560, 2849, 2)
     UTILS.randomSleep(3000)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
 
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 7056 },50)
     UTILS.randomSleep(3000)
@@ -514,10 +531,10 @@ local function Redsandstone()
     LODESTONES.OOGLOG.Teleport()
     clickRandomTile(2586, 2878, 2)
     UTILS.countTicks(1)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(2586, 2878, 2)
     UTILS.countTicks(5)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     if canDive() then dive(randomizeDiveCoordinates(2586, 2878, 0, 2)) else abilityWait() end
     API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
     API.RandomSleep2(600, 600, 600)
@@ -533,19 +550,19 @@ local function MenaphosSandstone()
     LODESTONES.MENAPHOS.Teleport()
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 24661 },50)
     API.RandomSleep2(300, 400, 100)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 24661 },50)
     UTILS.SleepUntil(function()
         return API.PInArea(3266, 2, 2729, 2, 0)
     end, 10, "Arrival at Sophanem  area")
     API.RandomSleep2(300, 400, 100)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(3304, 2757, 2)
     API.RandomSleep2(300, 400, 100)
     if canDive() then dive(randomizeDiveCoordinates(3290, 2729, 0, 2)) else abilityWait() end
     clickRandomTile(3320, 2761, 2)
     UTILS.countTicks(10)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     API.DoAction_Object1(0x39,API.OFF_ACT_GeneralObject_route0,{ 109350 },50)
     UTILS.countTicks(8)
     if canDive() then dive(randomizeDiveCoordinates(3321, 2761, 0, 1)) else abilityWait() end
@@ -554,7 +571,7 @@ local function MenaphosSandstone()
         return API.PInArea(3330, 1, 2761, 1, 0)
     end, 20, "Arrival at Sophanem  area")
     UTILS.countTicks(1)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
     API.RandomSleep2(300, 400, 100)
     API.WaitUntilMovingEnds()
@@ -569,13 +586,13 @@ local function Crystalsandstone()
     LODESTONES.PRIFDDINAS.Teleport()
     clickRandomTile(2166, 3361, 1)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(2144, 3351, 1)
     UTILS.countTicks(5)
     clickRandomTile(2144, 3351, 1)
     if canDive() then dive(randomizeDiveCoordinates(2142, 3361, 0, 1)) else abilityWait() end
     UTILS.countTicks(1)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(2144, 3351, 1)
     API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
     API.RandomSleep2(600, 600, 600)
@@ -589,7 +606,7 @@ local function TaverlyHerb()
     LODESTONES.TAVERLEY.Teleport()
     clickRandomTile(2876, 3417, 2)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     API.DoAction_Object1(0x5, API.OFF_ACT_GeneralObject_route1, {66666}, 50)
     local bankOpened = UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
     if bankOpened then 
@@ -598,10 +615,10 @@ local function TaverlyHerb()
     end
     clickRandomTile(2922, 3429, 2)
     UTILS.countTicks(2)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(2922, 3429, 2)
     UTILS.countTicks(5)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(2922, 3429, 2)
     if canDive() then dive(randomizeDiveCoordinates(2921, 3431, 0, 1)) else abilityWait() end
     UTILS.countTicks(1)
@@ -627,10 +644,10 @@ local function FortHerbshop()
     LODESTONES.FORT_FORINTHRY.Teleport()
     clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(1)
 
@@ -739,10 +756,10 @@ local function ClaimpotatoCactus()
         LODESTONES.YANILLE.Teleport()
         clickRandomTile(2528, 3129, 2)
         UTILS.countTicks(4)
-        if canSurge() then UTILS.surge() else abilityWait() end
+        if canSurge() then surge() else abilityWait() end
         API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
         UTILS.countTicks(2)
-        if canSurge() then UTILS.surge() else abilityWait() end
+        if canSurge() then surge() else abilityWait() end
         API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
         UTILS.SleepUntil(isOpen, 20, "Fairy ring open")
         if not isOpen() then
@@ -779,10 +796,10 @@ local function PriffherbShop()
     LODESTONES.PRIFDDINAS.Teleport()
     clickRandomTile(2235, 3398, 2)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(2235, 3398, 2)
     UTILS.countTicks(3)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     clickRandomTile(2235, 3398, 2)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {20285}, 50)
     UTILS.randomSleep(4000)
@@ -820,10 +837,10 @@ local function Mawsandstone()
         LODESTONES.PRIFDDINAS.Teleport()
         clickRandomTile(2235, 3398, 2)
         UTILS.countTicks(3)
-        if canSurge() then UTILS.surge() else abilityWait() end
+        if canSurge() then surge() else abilityWait() end
         clickRandomTile(2235, 3398, 2)
         UTILS.countTicks(3)
-        if canSurge() then UTILS.surge() else abilityWait() end
+        if canSurge() then surge() else abilityWait() end
         clickRandomTile(2237, 3400, 2)
         UTILS.SleepUntil(function()
             return API.PInArea(2237, 3, 3400, 3, 0)
@@ -836,12 +853,230 @@ local function Mawsandstone()
     API.RandomSleep2(1200, 1000, 500)
     API.DoAction_Object_valid1(0x29, API.OFF_ACT_GeneralObject_route0, IDS_Maw, 50, true)
     API.RandomSleep2(600, 700, 500)
-    if canSurge() then UTILS.surge() else abilityWait() end
+    if canSurge() then surge() else abilityWait() end
     API.DoAction_Object_valid1(0x29, API.OFF_ACT_GeneralObject_route0, IDS_Maw, 50, true)
     API.RandomSleep2(7000, 6000, 1000) 
     API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_crystalSandstone, 50, true)
     UTILS.SleepUntil(checkCues, 150, 'Crystal Sandstone')
     SHOP_STATUS.Mawsandstone = false
+end
+
+local badRuneIDs = { [4698]=true,[4695]=true,[4694]=true,[4697]=true,[4699]=true,[4696]=true }
+
+local RuneInterface = {
+    [554]  = {name="Fire Rune", interface=0x22a, slot=3},
+    [555]  = {name="Water Rune", interface=0x22b, slot=1},
+    [556]  = {name="Air Rune", interface=0x22c, slot=0},
+    [557]  = {name="Earth Rune", interface=0x22d, slot=2},
+    [558]  = {name="Mind Rune", interface=0x22e, slot=10},
+    [559]  = {name="Body Rune", interface=0x22f, slot=11},
+    [560]  = {name="Death Rune", interface=0x230, slot=16},
+    [561]  = {name="Nature Rune", interface=0x231, slot=14},
+    [562]  = {name="Chaos Rune", interface=0x232, slot=13},
+    [563]  = {name="Law Rune", interface=0x233, slot=15},
+    [564]  = {name="Cosmic Rune", interface=0x234, slot=12},
+    [565]  = {name="Blood Rune", interface=0x235, slot=18},
+    [566]  = {name="Soul Rune", interface=0x236, slot=19},
+    [9075] = {name="Astral Rune", interface=0x2373, slot=17},
+    [4698] = {name="Mud Rune"}, [4695] = {name="Mist Rune"},
+    [4694] = {name="Steam Rune"}, [4697] = {name="Smoke Rune"},
+    [4699] = {name="Lava Rune"}, [4696] = {name="Dust Rune"}
+}
+
+local nameToID = {}
+for id, info in pairs(RuneInterface) do
+    if info.name then nameToID[info.name] = id end
+end
+
+local function idToName(id)
+    local info = RuneInterface[tonumber(id)]
+    return info and info.name or ("Unknown Rune ("..tostring(id)..")")
+end
+
+local function PickBestRune(slotBestID, slotOtherIDs, usedRunes, badRuneIDs, idToName)
+    local bestName = idToName(slotBestID)
+    if not badRuneIDs[tonumber(slotBestID)] and not usedRunes[bestName] then
+        usedRunes[bestName] = true
+        return bestName
+    end
+    for _, alt in ipairs(slotOtherIDs or {}) do
+        local name = idToName(alt.id)
+        if not badRuneIDs[alt.id] and not usedRunes[name] then
+            usedRunes[name] = true
+            return name
+        end
+    end
+    if not usedRunes[bestName] then
+        usedRunes[bestName] = true
+        return bestName
+    end
+    return "Unknown Rune"
+end
+
+local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nameToID)
+    if not Inventory:Contains(capeItemID) then
+        print("[DEBUG] RuneCrafting cape not in inventory")
+        return nil
+    end
+
+    API.DoAction_Inventory1(capeItemID, 0, 7, API.OFF_ACT_GeneralInterface_route2)
+    UTILS.SleepUntil(CapeOpen, 5, "RuneCrafting cape interface")
+    API.RandomSleep2(1200, 600, 100)
+
+    local runeScan = API.ScanForInterfaceTest2Get(false, capeInterfaceIDs)
+    if not runeScan or #runeScan == 0 or not runeScan[1].textids then
+        print("[DEBUG] Scan failed, no rune found")
+        return nil
+    end
+
+    local fullText
+    if type(runeScan[1].textids) == "table" then
+        fullText = table.concat(runeScan[1].textids, " ")
+    else
+        fullText = tostring(runeScan[1].textids)
+    end
+
+    print("[DEBUG] Raw textids from cape:", fullText)
+
+    if not fullText or fullText == "" then
+        print("[DEBUG] No text found in scan")
+        return nil
+    end
+
+    local personalRune = fullText:match("are%s+([%a]+)<br>runes")
+    if not personalRune then
+        print("[DEBUG] Could not extract rune from cape text")
+        return nil
+    end
+
+    personalRune = personalRune:gsub("%s+", "")
+    print("[DEBUG] Personal rune found on cape (trimmed):", personalRune)
+
+    local runeID = nameToID[personalRune .. " Rune"]
+    if runeID then
+        if not badRuneIDs[runeID] then
+            print("[DEBUG] Cape rune accepted:", personalRune .. " Rune", "(ID:", runeID, ")")
+            return personalRune .. " Rune"
+        else
+            print("[DEBUG] Cape rune is bad:", personalRune .. " Rune", "(ID:", runeID, ")")
+            return nil
+        end
+    else
+        print("[DEBUG] Rune not recognized:", personalRune)
+        return nil
+    end
+end
+
+local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickBestRune)
+    local url = "https://runeguide.info/alt1/viswax/api/getVisWaxCombo.php"
+    local response = Http:Get(url)
+    local ok, data = pcall(API.JsonDecode, response and response.body or "{}")
+    local today = (ok and data and data["Wiki"]) or {}
+
+    local used = {}
+    local slot1 = PickBestRune(today.slot1_best, today.slot1_other, used, badRuneIDs, idToName)
+    local slot2 = PickBestRune(today.slot2_1_best, today.slot2_1_other, used, badRuneIDs, idToName)
+
+    return {slot1, slot2,}
+end
+
+local function InputCombo(combo, nameToID, RuneInterface)
+    print("[DEBUG] Entering Vis Wax combo...")
+    for _, runeName in ipairs(combo) do
+        local runeID = nameToID[runeName]
+        local info = RuneInterface[runeID]
+        if info and info.interface then
+            API.DoAction_Interface(0xffffffff, info.interface, 1, 1532, 13, info.slot, API.OFF_ACT_GeneralInterface_route)
+            API.RandomSleep2(800, 600, 100)
+        else
+            print("[DEBUG] Unknown interface for rune:", runeName)
+        end
+    end
+    API.DoAction_Interface(0x24,0xffffffff,1,1532,42,-1,API.OFF_ACT_GeneralInterface_route)
+    print("[DEBUG] Vis Wax combo entered successfully!")
+end
+
+local function FetchBestThirdRune(capeItemID, capeInterfaceIDs, badRuneIDs, nameToID, idToName, manualThirdRune)
+    local capeRune = nil
+    if Inventory:Contains(capeItemID) then
+        capeRune = GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nameToID, idToName)
+        if capeRune then
+            API.RandomSleep2(2400, 1200, 100)
+            print("Personal cape rune found:", capeRune)
+        end
+    end
+
+    if not capeRune or badRuneIDs[nameToID[capeRune]] then
+        if capeRune then
+            print("Cape rune is bad, picking best available from API/fallback")
+        else
+            print("No cape rune, picking best available from API/fallback")
+        end
+        return manualThirdRune or "Air Rune"
+    end
+
+    return capeRune
+end
+
+local function Viswax()
+    local capeID = 34259
+    local hoodID = 22332
+    local manualThirdRune = "Air Rune"
+    local capeInterfaceIDs = { {1186,2,-1,0}, {1186,3,-1,0} }
+
+    local warTeleport = API.GetABs_name1("War's Retreat Teleport")
+    if warTeleport and warTeleport.enabled then
+        print("Teleporting to War's Retreat...")
+        API.DoAction_Ability_Direct(warTeleport, 1, API.OFF_ACT_GeneralInterface_route)
+        API.RandomSleep2(500, 600, 500)
+        UTILS.SleepUntil(function() 
+            return API.PInArea(3294,10,10127,10,0) 
+        end, 5, "War's Retreat")
+        API.RandomSleep2(2400, 1200, 100)
+    end 
+
+   if not (Inventory:Contains(capeID) and Inventory:Contains(hoodID)) then
+        API.Write_LoopyLoop(false)
+    else
+        print("Cape and hood already in inventory, skipping bank step.")
+    end 
+
+    if not Inventory:Contains(hoodID) then
+        print("Wicked Hood is required to continue. Aborting loop.")
+        API.Write_LoopyLoop(false)
+        return
+    end
+
+    API.DoAction_Inventory1(22332,0,3,API.OFF_ACT_GeneralInterface_route)
+    API.RandomSleep2(1200, 800, 100)
+    UTILS.SleepUntil(function() return API.PInArea(3109,10,3156,10,0) end, 5, "War's Wizards' Tower")
+    API.RandomSleep2(1200, 800, 100)
+
+    
+    API.DoAction_Object1(0x39, API.OFF_ACT_GeneralObject_route0, {79518}, 50)
+    UTILS.SleepUntil(function() return API.PInArea(1697,10,5463,10,0) end, 10, "Goldberg machine area")
+
+  local capeID = 34259
+local capeInterfaceIDs = { {1186,2,-1,0}, {1186,3,-1,0} }
+
+local slot3Rune = GetPersonalCapeRune(capeID, capeInterfaceIDs, badRuneIDs, nameToID)
+
+if slot3Rune then
+    print("Slot 3 rune chosen:", slot3Rune)
+end
+
+local combo = FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickBestRune)
+
+if slot3Rune then
+    table.insert(combo, slot3Rune)
+end
+
+API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, {92236}, 50)
+UTILS.SleepUntil(isOpen, 5, "Goldberg machine input interface")
+
+InputCombo(combo, nameToID, RuneInterface)
+
+SHOP_STATUS.Viswax = false
 end
 
 if API.CacheEnabled then
@@ -854,7 +1089,9 @@ end
 API.Write_LoopyLoop(true)
 while API.Read_LoopyLoop() do
     API.DoRandomEvents()
-    if SHOP_STATUS.Lunar then
+    if SHOP_STATUS.Viswax then
+        Viswax()    
+    elseif SHOP_STATUS.Lunar then
         Lunar()
     elseif SHOP_STATUS.Yannile then
         buyMagesGuild()   
