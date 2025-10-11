@@ -896,19 +896,16 @@ end
 local function PickBestRune(slotBestID, slotOtherIDs, usedRunes, badRuneIDs, idToName)
     local candidates = {}
 
-    -- Add best first
     if slotBestID then
         table.insert(candidates, { id = tonumber(slotBestID), priority = 1 })
     end
 
-    -- Add others next (if exist)
     for _, alt in ipairs(slotOtherIDs or {}) do
         if alt.id then
             table.insert(candidates, { id = tonumber(alt.id), priority = 2 })
         end
     end
 
-    -- Sort by priority (best first, others after)
     table.sort(candidates, function(a, b)
         return a.priority < b.priority
     end)
@@ -954,8 +951,6 @@ local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nam
         return nil
     end
 
-    -- Match variants like:
-    -- "are<br>Death runes", "are<br>Air runes", "are Death runes."
     local personalRune = fullText:match("[Aa]re<br>%s*([A-Za-z]+)%s+[Rr]unes") or
                          fullText:match("[Aa]re%s*([A-Za-z]+)%s+[Rr]unes")
     if not personalRune then
@@ -978,7 +973,6 @@ local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nam
             return runeKey
         end
     else
-        -- If we don’t have it in nameToID, still return the name
         print("[DEBUG] Cape rune not in ID table, using raw name:", runeKey)
         return runeKey
     end
@@ -1000,18 +994,12 @@ local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickB
 
     local function num(v) return v and tonumber(v) or nil end
 
-    -------------------------------------------------
-    -- SLOT 1
-    -------------------------------------------------
     local slot1_bestID = num(today.slot1_best)
     local slot1_other = today.slot1_other or {}
     print("[DEBUG] Slot 1 best ID:", slot1_bestID)
     local slot1 = PickBestRune(slot1_bestID, slot1_other, used, badRuneIDs, idToName)
     print("[DEBUG] Slot 1 chosen:", slot1)
 
-    -------------------------------------------------
-    -- SLOT 2 (compare 3 variants by max vis)
-    -------------------------------------------------
     local slot2_sets = {
         {best = num(today.slot2_1_best), others = today.slot2_1_other or {}},
         {best = num(today.slot2_2_best), others = today.slot2_2_other or {}},
@@ -1025,7 +1013,6 @@ local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickB
         if s.best then
             local runeName = PickBestRune(s.best, s.others, used, badRuneIDs, idToName)
 
-            -- Determine max vis among alternates
             local maxVis = 0
             for _, alt in ipairs(s.others) do
                 if alt.vis and alt.vis > maxVis then
@@ -1044,9 +1031,6 @@ local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickB
 
     print(string.format("[DEBUG] Final slot 2 chosen: %s (vis: %d)", slot2_bestRune, highestVis))
 
-    -------------------------------------------------
-    -- Return numeric-indexed combo + source
-    -------------------------------------------------
     return {slot1, slot2_bestRune}, today.source or "Wiki"
 end
 
@@ -1126,7 +1110,6 @@ local function Viswax()
     API.DoAction_Object1(0x39, API.OFF_ACT_GeneralObject_route0, {79518}, 50)
     UTILS.SleepUntil(function() return API.PInArea(1697, 10, 5463, 10, 0) end, 10, "Goldberg machine area")
 
-    -- Get personal cape rune (slot3)
     local slot3Rune = GetPersonalCapeRune(capeID, capeInterfaceIDs, badRuneIDs, nameToID)
     if slot3Rune then
         print("Slot 3 rune (personal cape rune):", slot3Rune)
@@ -1135,11 +1118,9 @@ local function Viswax()
         slot3Rune = manualThirdRune
     end
 
-    -- Fetch slot1 and slot2 from Wiki
     local combo, source = FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickBestRune)
-    table.insert(combo, slot3Rune) -- add slot3 as index 3
+    table.insert(combo, slot3Rune) 
 
-    -- Print final combo
     print("========== FINAL VISWAX COMBO ==========")
     for i, rune in ipairs(combo) do
         print(string.format("Slot %d → %s", i, rune))
