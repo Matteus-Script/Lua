@@ -894,24 +894,38 @@ local function idToName(id)
 end
 
 local function PickBestRune(slotBestID, slotOtherIDs, usedRunes, badRuneIDs, idToName)
-    local bestName = idToName(slotBestID)
-    if not badRuneIDs[tonumber(slotBestID)] and not usedRunes[bestName] then
-        usedRunes[bestName] = true
-        return bestName
+    local candidates = {}
+
+    -- Add best first
+    if slotBestID then
+        table.insert(candidates, { id = tonumber(slotBestID), priority = 1 })
     end
+
+    -- Add others next (if exist)
     for _, alt in ipairs(slotOtherIDs or {}) do
-        local name = idToName(alt.id)
-        if not badRuneIDs[alt.id] and not usedRunes[name] then
+        if alt.id then
+            table.insert(candidates, { id = tonumber(alt.id), priority = 2 })
+        end
+    end
+
+    -- Sort by priority (best first, others after)
+    table.sort(candidates, function(a, b)
+        return a.priority < b.priority
+    end)
+
+    for _, c in ipairs(candidates) do
+        local name = idToName(c.id)
+        if name and not badRuneIDs[c.id] and not usedRunes[name] then
             usedRunes[name] = true
+            print(string.format("[DEBUG] PickBestRune: Selected %s (ID: %d)", name, c.id))
             return name
         end
     end
-    if not usedRunes[bestName] then
-        usedRunes[bestName] = true
-        return bestName
-    end
+
+    print("[DEBUG] PickBestRune: No valid rune found, all bad or used")
     return "Unknown Rune"
 end
+
 
 local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nameToID)
     if not Inventory:Contains(capeItemID) then
@@ -975,14 +989,67 @@ local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickB
     local url = "https://runeguide.info/alt1/viswax/api/getVisWaxCombo.php"
     local response = Http:Get(url)
     local ok, data = pcall(API.JsonDecode, response and response.body or "{}")
-    local today = (ok and data and data["Wiki"]) or {}
 
+    if not ok or not data or not data["Wiki"] then
+        print("[DEBUG] Failed to get VisWax combo data or malformed JSON")
+        return nil, "Unknown"
+    end
+
+    local today = data["Wiki"]
     local used = {}
-    local slot1 = PickBestRune(today.slot1_best, today.slot1_other, used, badRuneIDs, idToName)
-    local slot2 = PickBestRune(today.slot2_1_best, today.slot2_1_other, used, badRuneIDs, idToName)
 
-    return {slot1, slot2,}
+    local function num(v) return v and tonumber(v) or nil end
+
+    -------------------------------------------------
+    -- SLOT 1
+    -------------------------------------------------
+    local slot1_bestID = num(today.slot1_best)
+    local slot1_other = today.slot1_other or {}
+    print("[DEBUG] Slot 1 best ID:", slot1_bestID)
+    local slot1 = PickBestRune(slot1_bestID, slot1_other, used, badRuneIDs, idToName)
+    print("[DEBUG] Slot 1 chosen:", slot1)
+
+    -------------------------------------------------
+    -- SLOT 2 (compare 3 variants by max vis)
+    -------------------------------------------------
+    local slot2_sets = {
+        {best = num(today.slot2_1_best), others = today.slot2_1_other or {}},
+        {best = num(today.slot2_2_best), others = today.slot2_2_other or {}},
+        {best = num(today.slot2_3_best), others = today.slot2_3_other or {}}
+    }
+
+    local slot2_bestRune = "Unknown Rune"
+    local highestVis = -1
+
+    for i, s in ipairs(slot2_sets) do
+        if s.best then
+            local runeName = PickBestRune(s.best, s.others, used, badRuneIDs, idToName)
+
+            -- Determine max vis among alternates
+            local maxVis = 0
+            for _, alt in ipairs(s.others) do
+                if alt.vis and alt.vis > maxVis then
+                    maxVis = alt.vis
+                end
+            end
+
+            print(string.format("[DEBUG] Slot2_%d candidate: %s (maxVis: %d)", i, runeName, maxVis))
+
+            if maxVis > highestVis then
+                highestVis = maxVis
+                slot2_bestRune = runeName
+            end
+        end
+    end
+
+    print(string.format("[DEBUG] Final slot 2 chosen: %s (vis: %d)", slot2_bestRune, highestVis))
+
+    -------------------------------------------------
+    -- Return numeric-indexed combo + source
+    -------------------------------------------------
+    return {slot1, slot2_bestRune}, today.source or "Wiki"
 end
+
 
 local function InputCombo(combo, nameToID, RuneInterface)
     print("[DEBUG] Entering Vis Wax combo...")
@@ -1039,7 +1106,7 @@ local function Viswax()
         API.RandomSleep2(2400, 1200, 100)
     end  ]]
 
-   if not (Inventory:Contains(capeID) and Inventory:Contains(hoodID)) then
+    if not (Inventory:Contains(capeID) and Inventory:Contains(hoodID)) then
         API.Write_LoopyLoop(false)
     else
         print("Cape and hood already in inventory, skipping bank step.")
@@ -1051,37 +1118,44 @@ local function Viswax()
         return
     end
 
-    API.DoAction_Inventory1(22332,0,3,API.OFF_ACT_GeneralInterface_route)
+    API.DoAction_Inventory1(hoodID, 0, 3, API.OFF_ACT_GeneralInterface_route)
     API.RandomSleep2(1200, 800, 100)
-    UTILS.SleepUntil(function() return API.PInArea(3109,10,3156,10,0) end, 5, "War's Wizards' Tower")
+    UTILS.SleepUntil(function() return API.PInArea(3109, 10, 3156, 10, 0) end, 5, "War's Wizards' Tower")
     API.RandomSleep2(1200, 800, 100)
+
+    API.DoAction_Object1(0x39, API.OFF_ACT_GeneralObject_route0, {79518}, 50)
+    UTILS.SleepUntil(function() return API.PInArea(1697, 10, 5463, 10, 0) end, 10, "Goldberg machine area")
+
+    -- Get personal cape rune (slot3)
+    local slot3Rune = GetPersonalCapeRune(capeID, capeInterfaceIDs, badRuneIDs, nameToID)
+    if slot3Rune then
+        print("Slot 3 rune (personal cape rune):", slot3Rune)
+    else
+        print("No personal cape rune detected; using manual:", manualThirdRune)
+        slot3Rune = manualThirdRune
+    end
+
+    -- Fetch slot1 and slot2 from Wiki
+    local combo, source = FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickBestRune)
+    table.insert(combo, slot3Rune) -- add slot3 as index 3
+
+    -- Print final combo
+    print("========== FINAL VISWAX COMBO ==========")
+    for i, rune in ipairs(combo) do
+        print(string.format("Slot %d → %s", i, rune))
+    end
+    print("Source:", source)
+    print("========================================")
 
     
-    API.DoAction_Object1(0x39, API.OFF_ACT_GeneralObject_route0, {79518}, 50)
-    UTILS.SleepUntil(function() return API.PInArea(1697,10,5463,10,0) end, 10, "Goldberg machine area")
+    API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, {92236}, 50)
 
-  local capeID = 34259
-local capeInterfaceIDs = { {1186,2,-1,0}, {1186,3,-1,0} }
+    UTILS.SleepUntil(isOpen, 5, "Goldberg machine input interface")
+    InputCombo(combo, nameToID, RuneInterface)
 
-local slot3Rune = GetPersonalCapeRune(capeID, capeInterfaceIDs, badRuneIDs, nameToID)
-
-if slot3Rune then
-    print("Slot 3 rune chosen:", slot3Rune)
+    SHOP_STATUS.Viswax = false
 end
 
-local combo = FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickBestRune)
-
-if slot3Rune then
-    table.insert(combo, slot3Rune)
-end
-
-API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, {92236}, 50)
-UTILS.SleepUntil(isOpen, 5, "Goldberg machine input interface")
-
-InputCombo(combo, nameToID, RuneInterface)
-
-SHOP_STATUS.Viswax = false
-end
 
 if API.CacheEnabled then
     print ("Cache is enabled, running the script.")
