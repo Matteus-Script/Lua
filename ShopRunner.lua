@@ -675,7 +675,7 @@ local function FortHerbshop()
 
     if SHOP_STATUS.Buybroads then
         API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 30027 },50)
-        API.RandomSleep2(300, 500, 600)
+        API.RandomSleep2(4000, 3000, 600)
         UTILS.SleepUntil(isOpen, 10, "Raptor shop open")
         BuyFromShopContainer(538) 
     end
@@ -921,7 +921,7 @@ local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nam
 
     API.DoAction_Inventory1(capeItemID, 0, 7, API.OFF_ACT_GeneralInterface_route2)
     UTILS.SleepUntil(CapeOpen, 5, "RuneCrafting cape interface")
-    API.RandomSleep2(1200, 600, 100)
+    API.RandomSleep2(2000, 1500, 100)
 
     local runeScan = API.ScanForInterfaceTest2Get(false, capeInterfaceIDs)
     if not runeScan or #runeScan == 0 or not runeScan[1].textids then
@@ -929,12 +929,9 @@ local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nam
         return nil
     end
 
-    local fullText
-    if type(runeScan[1].textids) == "table" then
-        fullText = table.concat(runeScan[1].textids, " ")
-    else
-        fullText = tostring(runeScan[1].textids)
-    end
+    local fullText = type(runeScan[1].textids) == "table"
+        and table.concat(runeScan[1].textids, " ")
+        or tostring(runeScan[1].textids)
 
     print("[DEBUG] Raw textids from cape:", fullText)
 
@@ -943,29 +940,36 @@ local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nam
         return nil
     end
 
-    local personalRune = fullText:match("are%s+([%a]+)<br>runes")
+    -- Match variants like:
+    -- "are<br>Death runes", "are<br>Air runes", "are Death runes."
+    local personalRune = fullText:match("[Aa]re<br>%s*([A-Za-z]+)%s+[Rr]unes") or
+                         fullText:match("[Aa]re%s*([A-Za-z]+)%s+[Rr]unes")
     if not personalRune then
         print("[DEBUG] Could not extract rune from cape text")
         return nil
     end
 
     personalRune = personalRune:gsub("%s+", "")
-    print("[DEBUG] Personal rune found on cape (trimmed):", personalRune)
+    print("[DEBUG] Personal rune found on cape:", personalRune)
 
-    local runeID = nameToID[personalRune .. " Rune"]
+    local runeKey = personalRune .. " Rune"
+    local runeID = nameToID and nameToID[runeKey] or nil
+
     if runeID then
-        if not badRuneIDs[runeID] then
-            print("[DEBUG] Cape rune accepted:", personalRune .. " Rune", "(ID:", runeID, ")")
-            return personalRune .. " Rune"
-        else
-            print("[DEBUG] Cape rune is bad:", personalRune .. " Rune", "(ID:", runeID, ")")
+        if badRuneIDs and badRuneIDs[runeID] then
+            print("[DEBUG] Cape rune is bad:", runeKey, "(ID:", runeID, ")")
             return nil
+        else
+            print("[DEBUG] Cape rune accepted:", runeKey, "(ID:", runeID, ")")
+            return runeKey
         end
     else
-        print("[DEBUG] Rune not recognized:", personalRune)
-        return nil
+        -- If we don’t have it in nameToID, still return the name
+        print("[DEBUG] Cape rune not in ID table, using raw name:", runeKey)
+        return runeKey
     end
 end
+
 
 local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickBestRune)
     local url = "https://runeguide.info/alt1/viswax/api/getVisWaxCombo.php"
@@ -1024,7 +1028,7 @@ local function Viswax()
     local manualThirdRune = "Air Rune"
     local capeInterfaceIDs = { {1186,2,-1,0}, {1186,3,-1,0} }
 
-    local warTeleport = API.GetABs_name1("War's Retreat Teleport")
+    --[[ local warTeleport = API.GetABs_name1("War's Retreat Teleport")
     if warTeleport and warTeleport.enabled then
         print("Teleporting to War's Retreat...")
         API.DoAction_Ability_Direct(warTeleport, 1, API.OFF_ACT_GeneralInterface_route)
@@ -1033,7 +1037,7 @@ local function Viswax()
             return API.PInArea(3294,10,10127,10,0) 
         end, 5, "War's Retreat")
         API.RandomSleep2(2400, 1200, 100)
-    end 
+    end  ]]
 
    if not (Inventory:Contains(capeID) and Inventory:Contains(hoodID)) then
         API.Write_LoopyLoop(false)
