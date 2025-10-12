@@ -893,7 +893,7 @@ local function idToName(id)
     return info and info.name or ("Unknown Rune ("..tostring(id)..")")
 end
 
-local function PickBestRune(slotBestID, slotOtherIDs, usedRunes, badRuneIDs, idToName)
+local function PickBestRune(slotBestID, slotOtherIDs, usedRunes, badRuneIDs, idToName, excludeRuneName)
     local candidates = {}
 
     if slotBestID then
@@ -912,16 +912,21 @@ local function PickBestRune(slotBestID, slotOtherIDs, usedRunes, badRuneIDs, idT
 
     for _, c in ipairs(candidates) do
         local name = idToName(c.id)
-        if name and not badRuneIDs[c.id] and not usedRunes[name] then
+        if name 
+            and not badRuneIDs[c.id] 
+            and not usedRunes[name] 
+            and name ~= excludeRuneName then
+
             usedRunes[name] = true
             print(string.format("[DEBUG] PickBestRune: Selected %s (ID: %d)", name, c.id))
             return name
         end
     end
 
-    print("[DEBUG] PickBestRune: No valid rune found, all bad or used")
+    print("[DEBUG] PickBestRune: No valid rune found, all bad, used, or excluded")
     return "Unknown Rune"
 end
+
 
 
 local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nameToID)
@@ -951,8 +956,12 @@ local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nam
         return nil
     end
 
-    local personalRune = fullText:match("[Aa]re<br>%s*([A-Za-z]+)%s+[Rr]unes") or
-                         fullText:match("[Aa]re%s*([A-Za-z]+)%s+[Rr]unes")
+    -- Normalize <br> tags and spacing
+    fullText = fullText:gsub("<br>", " "):gsub("%s+", " ")
+
+    -- Capture any word between "are" and "runes"
+    local personalRune = fullText:match("[Aa]re%s+([A-Za-z]+)%s*[Rr]unes")
+
     if not personalRune then
         print("[DEBUG] Could not extract rune from cape text")
         return nil
@@ -997,7 +1006,7 @@ local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickB
     local slot1_bestID = num(today.slot1_best)
     local slot1_other = today.slot1_other or {}
     print("[DEBUG] Slot 1 best ID:", slot1_bestID)
-    local slot1 = PickBestRune(slot1_bestID, slot1_other, used, badRuneIDs, idToName)
+    local slot1 = PickBestRune(slot1_bestID, slot1_other, used, badRuneIDs, idToName, slot3Rune)
     print("[DEBUG] Slot 1 chosen:", slot1)
 
     local slot2_sets = {
@@ -1011,7 +1020,7 @@ local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickB
 
     for i, s in ipairs(slot2_sets) do
         if s.best then
-            local runeName = PickBestRune(s.best, s.others, used, badRuneIDs, idToName)
+            local runeName = PickBestRune(s.best, s.others, used, badRuneIDs, idToName, slot3Rune)
 
             local maxVis = 0
             for _, alt in ipairs(s.others) do
@@ -1033,6 +1042,7 @@ local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickB
 
     return {slot1, slot2_bestRune}, today.source or "Wiki"
 end
+
 
 
 local function InputCombo(combo, nameToID, RuneInterface)
