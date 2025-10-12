@@ -1061,7 +1061,6 @@ local function Viswax()
     for i, rune in ipairs(combo) do
         print(string.format("Slot %d → %s", i, rune))
     end
-    print("Source:", source)
     print("========================================")
 
     API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, {92236}, 50)
