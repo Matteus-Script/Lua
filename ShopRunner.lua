@@ -205,13 +205,11 @@ end
 
 local function Lunar()
     LODESTONES.LUNAR_ISLE.Teleport()
-    clickRandomTile(2092, 3931, 2)
-    UTILS.countTicks(8)
-    if canDive() then dive(randomizeDiveCoordinates(2100, 3929, 0, 1)) else abilityWait() end
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {4512}, 50)
-    UTILS.countTicks(1)
+    UTILS.countTicks(2)
     if canSurge() then surge() else abilityWait() end
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {4512}, 50)
+    UTILS.countTicks(1)
 
     UTILS.SleepUntil(function()
         return API.PInArea(3103, 5, 4447, 5, 0)
