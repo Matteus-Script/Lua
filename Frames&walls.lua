@@ -1,7 +1,7 @@
 -- Title: Frames&Walls
 -- Author: <Matteus>
 -- Description: <Construct frames and walls using logs, planks, refined planks, and limestone. Start at bank with preset.>
--- Version: <1.4>
+-- Version: <1.0>
 -- Category: Skilling/Moneymaking
 -- Date : 2025.12.17
 
