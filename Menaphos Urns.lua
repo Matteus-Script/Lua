@@ -19,7 +19,7 @@ end
 local function bank()
     Interact:Object("Bank chest", "Load Last Preset from", 15)
     API.RandomSleep2(500, 800, 50)
-    local success = UTILS.SleepUntil(function() return countItems(1761) >= 2 end, 5, "Waiting for bank to load items...")
+    local success = UTILS.SleepUntil(function() return countItems(1761) >= 2 end, 10, "Waiting for bank to load items...")
     if not success then
         print("Banking timed out. Not enough soft clay. Exiting script.")
         API.Write_LoopyLoop(false)
