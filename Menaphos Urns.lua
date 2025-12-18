@@ -1,72 +1,73 @@
--- Title: Urn Crafter (Menaphos)
--- Author: <Matteus>
--- Description: Makes Urns in Priff select your urn then start>
--- Version: <1.0>
--- Category: Crafting
--- Date : 2024.08.26
+--[[
+# Script Name:   <Urn Crafter>
+# Description:   <Makes Urns in Menaphos select your urn then start>
+# Author:        <Matteus>
+# Version:       <1.1>
+# Date:          <2025.12.18>
+--]]
 
 local API = require("api")
-
-local MAX_IDLE_TIME_MINUTES = 5
-local BANK_CHEST = 107491
-local POTTERSWHEEL = 107724
-local SOFT_CLAY_ID = 1761
-local MIN_SOFT_CLAY_COUNT = 2
+local UTILS = require("utils")
 
 API.SetDrawTrackedSkills(true)
+API.SetMaxIdleTime(10)
 
-local function hasEnoughSoftClay()
-    return (API.InvItemcount_1(SOFT_CLAY_ID) or 0) >= MIN_SOFT_CLAY_COUNT
+local function countItems(itemID)
+    return Inventory:InvItemcount(itemID) or 0
 end
 
-local function getSelectedItemId()
-    return API.VB_FindPSettinOrder(1170, 0).state
+local function bank()
+    Interact:Object("Bank chest", "Load Last Preset from", 15)
+    API.RandomSleep2(500, 800, 50)
+    local success = UTILS.SleepUntil(function() return countItems(1761) >= 2 end, 5, "Waiting for bank to load items...")
+    if not success then
+        print("Banking timed out. Not enough soft clay. Exiting script.")
+        API.Write_LoopyLoop(false)
+    end
+end
+
+local function hasEnoughSoftClay()
+    if countItems(1761) < 2 then
+        print("Not enough soft clay. Attempting to bank.")
+        bank()
+        if countItems(1761) < 2 then
+            print("Still not enough soft clay after banking. Exiting script.")
+            API.Write_LoopyLoop(false)
+            return false
+        end
+    end
+    return true
 end
 
 local function isOpen()
-    return getSelectedItemId() ~= -1 and (API.Compare2874Status(18, false) or API.Compare2874Status(40, false))
+    return API.Compare2874Status(18, false) or API.Compare2874Status(40, false)
 end
 
-local function waitForPotteryInterface()
-    local waitCounter = 0
-    local maxWait = 50
-    while waitCounter < maxWait do
-        if isOpen() then
-            return true
-        end
-        API.RandomSleep2(100, 200, 300)
-        waitCounter = waitCounter + 1
+local function processStage()
+    if not hasEnoughSoftClay() then
+        bank()
+        return
     end
-    return false
+
+    API.DoAction_Object2(0x29, API.OFF_ACT_GeneralObject_route0, { 107724 }, 50, WPOINT.new(3164, 2791, 0))
+
+    UTILS.SleepUntil(isOpen, 10, "Waiting for pottery interface...")
+
+    API.KeyboardPress32(0x20, 0)
+    API.RandomSleep2(1200, 800, 50)
+
+    UTILS.SleepUntil(function() return not API.isProcessing() end, 80, "Processing...")
 end
 
---main loop
+API.Write_LoopyLoop(true)
 while API.Read_LoopyLoop() do
     API.DoRandomEvents()
-    API.SetMaxIdleTime(MAX_IDLE_TIME_MINUTES)
 
-    if API.CheckAnim(50) or API.ReadPlayerMovin2() or API.isProcessing() then
+    if API.isProcessing() then
         API.RandomSleep2(200, 300, 400)
-        goto continue
+    else
+        processStage()
     end
 
-    if not hasEnoughSoftClay() then
-        if not API.InvFull_() then
-            API.DoAction_Object1(0x33, API.OFF_ACT_GeneralObject_route3, { BANK_CHEST }, 50)
-            API.RandomSleep2(200, 300, 400)
-        end
-    end
-
-    if hasEnoughSoftClay() then
-        API.DoAction_Object1(0x3e, API.OFF_ACT_GeneralObject_route0, { POTTERSWHEEL }, 50)
-
-        if waitForPotteryInterface() then
-            API.KeyboardPress32(0x20, 0)
-        else
-            print("Failed to open the pottery interface.")
-        end
-    end
-
-    ::continue::
-    API.RandomSleep2(200, 300, 400)
+    API.RandomSleep2(250, 80, 80)
 end
