@@ -85,13 +85,10 @@ while (API.Read_LoopyLoop()) do
         local rawItems = scanInventoryForRaw()
         if printRawItems(rawItems) then
             bankAttempts = 0
-        else
-            print("[STOP] No raw items found after bank refill.")
-            API.Write_LoopyLoop(false)
         end
         bankAttempts = bankAttempts + 1
-        if bankAttempts >= 3 then
-            print("[STOP] Bank refill attempts exceeded (3 attempts).")
+        if bankAttempts >= 2 then
+            print("[STOP] Bank refill attempts exceeded (2 attempts).")
             API.Write_LoopyLoop(false)
         end
     end
