@@ -17,25 +17,6 @@ local function scanInventoryForRaw()
   return rawItems
 end
 
-local function printRawItems(rawItems)
-  if #rawItems > 0 then
-    local itemCounts = {}
-    for _, item in ipairs(rawItems) do
-      local key = item.itemid1
-      if not itemCounts[key] then
-        itemCounts[key] = {name = item.textitem, count = 0}
-      end
-      itemCounts[key].count = itemCounts[key].count + 1
-    end
-    
-    for itemId, data in pairs(itemCounts) do
-      print(string.format("Found: %dx %s [%d]", data.count, data.name, itemId))
-    end
-    return true
-  end
-  return false
-end
-
 local function isOpen()
     return API.Compare2874Status(40, false) or API.Compare2874Status(18, false)
 end
@@ -60,11 +41,26 @@ local function waitForCookingComplete()
 end
 
 local function refillFromBank()
-    Interact:Object("Bank chest", "Load Last Preset from", 10)
+    Interact:Object("Bank chest", "Load Last Preset from", WPOINT.new(3316, 3571,0))
 end
 
 local rawItems = scanInventoryForRaw()
-if not printRawItems(rawItems) then
+if #rawItems > 0 then
+  -- Stack items by ID and count them
+  local itemCounts = {}
+  for _, item in ipairs(rawItems) do
+    local key = item.itemid1
+    if not itemCounts[key] then
+      itemCounts[key] = {name = item.textitem, count = 0}
+    end
+    itemCounts[key].count = itemCounts[key].count + 1
+  end
+  
+  -- Print stacked items
+  for itemId, data in pairs(itemCounts) do
+    print(string.format("Found: %dx %s [%d]", data.count, data.name, itemId))
+  end
+else
   print("No raw items at start, banking first...")
 end
 
@@ -72,7 +68,7 @@ API.Write_LoopyLoop(true)
 local bankAttempts = 0
 
 while (API.Read_LoopyLoop()) do
-    API.DoRandomEvents()
+    API.DoRandomEvents(true)
     local rawItems = scanInventoryForRaw()
     if #rawItems > 0 then
         if startCooking() then
@@ -81,9 +77,22 @@ while (API.Read_LoopyLoop()) do
         bankAttempts = 0
     else
         refillFromBank()
-        API.RandomSleep2(800, 1200, 100)
+        UTILS.SleepUntil(function() return not API.ReadPlayerMovin2() end, 30, "player to stop moving")
+        API.RandomSleep2(500, 1000, 200)
         local rawItems = scanInventoryForRaw()
-        if printRawItems(rawItems) then
+        if #rawItems > 0 then
+            local itemCounts = {}
+            for _, item in ipairs(rawItems) do
+                local key = item.itemid1
+                if not itemCounts[key] then
+                    itemCounts[key] = {name = item.textitem, count = 0}
+                end
+                itemCounts[key].count = itemCounts[key].count + 1
+            end
+            
+            for itemId, data in pairs(itemCounts) do
+                print(string.format("Found: %dx %s [%d]", data.count, data.name, itemId))
+            end
             bankAttempts = 0
         end
         bankAttempts = bankAttempts + 1
@@ -92,5 +101,5 @@ while (API.Read_LoopyLoop()) do
             API.Write_LoopyLoop(false)
         end
     end
-    API.RandomSleep2(300, 700, 150)
+    API.RandomSleep2(200, 500, 100)
 end
