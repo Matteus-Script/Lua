@@ -21,7 +21,7 @@ local function isOpen()
     return API.Compare2874Status(40, false) or API.Compare2874Status(18, false)
 end
 local function startCooking()
-    Interact:Object("Range", "Cook-at")
+    Interact:Object("Range", "Cook-at", WPOINT.new(3317, 3571,0))
     local success = UTILS.SleepUntil(isOpen, 10, "interface to open")
     if success then
         API.KeyboardPress32(0x20, 0)
