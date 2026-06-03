@@ -2,7 +2,7 @@
 # Script Name:   <Priff Summoning>
 # Description:   <Makes pouches in Priff, start at the bank uses loadlastpreset>
 # Author:        <Matteus>
-# Version:       <1.1>
+# Version:       <2.0>
 # Date:          <2025.01.23>
 --]]
 
