@@ -26,9 +26,6 @@ local states = {
 }
 
 local currentState = states.BANK
-local itemCountsAfterBanking = {}
-local itemCountsAfterProcessing = {}
-local firstBankingDone = false
 local makingBindingContracts = false
 
 local function TeleportAmlodd()
