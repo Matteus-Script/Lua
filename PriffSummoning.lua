@@ -26,6 +26,10 @@ local states = {
 }
 
 local currentState = states.BANK
+local itemCountsAfterBanking = {}
+local itemCountsAfterProcessing = {}
+local firstBankingDone = false
+local makingBindingContracts = false
 
 local function TeleportAmlodd()
     API.DoAction_Inventory1(39784, 0, 1, API.OFF_ACT_GeneralInterface_route)
@@ -101,7 +105,13 @@ end
 
 local function Bank()
     Interact:Object("Bank chest", "Load Last Preset from", WPOINT.new(2153, 3341,0))
-    UTILS.SleepUntil(function() return Inventory:IsFull() end, 30, "Inventory full")
+    
+    if makingBindingContracts then
+        UTILS.SleepUntil(function() return Inventory:IsFull() end, 30, "Inventory full")
+    else
+        API.RandomSleep2(600, 1200, 200)
+        UTILS.SleepUntil(function() return not API.ReadPlayerMovin2() and Inventory:IsFull() end, 10, "player to stop moving and inventory full")
+    end
 
     local shardCount = Inventory:InvStackSize(12183)
     local pouchCount = Inventory:InvStackSize(12155)
@@ -116,6 +126,25 @@ end
 
 
 API.Write_LoopyLoop(true)
+
+local pouchTypeChoice = ScriptDialogWindow2(
+    "Select Pouch Type",
+    {"Binding Contracts", "Regular Pouches"},
+    "Binding Contracts",
+    "Regular Pouches",
+    "Make",
+    "Cancel"
+).Name
+
+print("Selected pouch type: " .. pouchTypeChoice)
+
+if pouchTypeChoice == "Binding Contracts" then
+    makingBindingContracts = true
+    print("Making Binding Contracts - will wait for inventory to fill")
+else
+    makingBindingContracts = false
+    print("Making Regular Pouches - will wait until stopped moving")
+end
 
 while (API.Read_LoopyLoop()) do
     if currentState == states.TELEPORT_AMLODD then
