@@ -1,5 +1,5 @@
 --[[
-# Script Name:   <Urn Crafter>
+# Script Name:   <Urn Crafter (Ironman)>
 # Description:   <Makes Urns in Menaphos select your urn then start>
 # Author:        <Matteus>
 # Version:       <1.1>
@@ -8,6 +8,7 @@
 
 local API = require("api")
 local UTILS = require("utils")
+local ElidinisSouls = require("ElidinisSouls")
 
 API.SetDrawTrackedSkills(true)
 API.SetMaxIdleTime(10)
@@ -62,6 +63,7 @@ end
 API.Write_LoopyLoop(true)
 while API.Read_LoopyLoop() do
     API.DoRandomEvents()
+    ElidinisSouls.HandleSouls()
 
     if API.isProcessing() then
         API.RandomSleep2(200, 300, 400)
