@@ -58,12 +58,8 @@ local function ClickObelisk()
     API.KeyboardPress32(0x20, 0)
     API.RandomSleep2(600, 900, 75)
 
-    UTILS.SleepUntil(function() 
-        local processing = API.isProcessing()
-        return not processing 
-    end, 80, "Processing...")
+    UTILS.SleepUntil(function() local processing = API.isProcessing()return not processing end, 80, "Processing...")
     
-
     currentState = states.TELEPORT_ITHELL
 end
 
@@ -104,10 +100,18 @@ local function Bank()
     Interact:Object("Bank chest", "Load Last Preset from", WPOINT.new(2153, 3341,0))
     
     if makingBindingContracts then
-        UTILS.SleepUntil(function() return Inventory:IsFull() end, 30, "Inventory full")
+        if not UTILS.SleepUntil(function() return Inventory:IsFull() end, 10, "Inventory full") then
+            print("Timeout waiting for inventory to fill")
+            API.Write_LoopyLoop(false)
+            return
+        end
     else
         API.RandomSleep2(600, 1200, 200)
-        UTILS.SleepUntil(function() return not API.ReadPlayerMovin2() and Inventory:IsFull() end, 10, "player to stop moving and inventory full")
+        if not UTILS.SleepUntil(function() return not API.ReadPlayerMovin2() and Inventory:IsFull() end, 10, "player to stop moving and inventory full") then
+            print("Timeout waiting for player to stop moving and inventory full")
+            API.Write_LoopyLoop(false)
+            return
+        end
     end
 
     local shardCount = Inventory:InvStackSize(12183)
@@ -120,7 +124,6 @@ local function Bank()
 
     currentState = states.TELEPORT_AMLODD
 end
-
 
 API.Write_LoopyLoop(true)
 
@@ -137,10 +140,10 @@ print("Selected pouch type: " .. pouchTypeChoice)
 
 if pouchTypeChoice == "Binding Contracts" then
     makingBindingContracts = true
-    print("Making Binding Contracts - will wait for inventory to fill")
+    print("Making Binding Contracts")
 else
     makingBindingContracts = false
-    print("Making Regular Pouches - will wait until stopped moving")
+    print("Making Regular Pouches")
 end
 
 while (API.Read_LoopyLoop()) do
