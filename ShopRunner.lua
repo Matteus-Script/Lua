@@ -10,7 +10,6 @@ local LODESTONES = require("lodestones")
 local UTILS = require("utils")
 
 local SHOP_STATUS = {
-    Viswax = true,
     Lunar = true,
     Yannile = true,
     Sarim = true,
@@ -20,16 +19,12 @@ local SHOP_STATUS = {
     ZamorakMage = true,
     Magebank = true,
     Ooglog = true,
-    Redsandstone = true,
-    MenaphosSandstone = true,
-    Crystalsandstone = true,
     TaverlyHerb = true,
     FortHerbshop = true,
-    PriffherbShop = true,
     ClaimpotatoCactus = true,
-    Buybroads = true, 
-    Flies = true,
-    Mawsandstone = true,
+    Buybroads = false, 
+    Flies = false,
+    PriffherbShop = true,
 }
 
 local SHOP_BUY_LIST = {
@@ -105,6 +100,12 @@ local function BuyFromShopContainer(containerID)
             print(string.format("Buying slot %d (ID %d) %s", slotInfo.slot, itemID, comment or ""))
             API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, slotInfo.slot, API.OFF_ACT_GeneralInterface_route)
             API.RandomSleep2(100, 200, 300)
+
+            -- Check if inventory is full after each purchase
+            if Inventory:IsFull() then
+                print("Inventory is full. Stopping purchases.")
+                return
+            end
         end
     end
 end
@@ -112,21 +113,32 @@ end
 local function abilityWait()
     API.RandomSleep2(2000, 3000, 500)
 end
+
+local DIVE_ABILITIES = { "Bladed Dive", "Dive" }
+
 local function canDive()
-    local dive = API.GetABs_name("Dive", true)  
-    if dive and dive.cooldown_timer < 1 and dive.enabled == true then
-        return true
-    else
-        return false
+    for _, abilityName in ipairs(DIVE_ABILITIES) do
+        local ab = API.GetABs_name(abilityName, true)
+        if ab and ab.cooldown_timer < 1 and ab.enabled then
+            return true
+        end
     end
+    return false
 end
 
 local function dive(destinationTile)
-  local diveAB = API.GetABs_name("Dive", true)  
-  if diveAB ~= nil then
-    return API.DoAction_Dive_Tile(destinationTile)
-  end
-  return false
+    for _, abilityName in ipairs(DIVE_ABILITIES) do
+        local ab = API.GetABs_name(abilityName, true)
+
+        if ab and ab.cooldown_timer < 1 and ab.enabled then
+            if abilityName == "Bladed Dive" then
+                return API.DoAction_BDive_Tile(destinationTile)
+            else
+                return API.DoAction_Dive_Tile(destinationTile)
+            end
+        end
+    end
+    return false
 end
 
 local function canSurge()
@@ -369,6 +381,8 @@ local function BuyAlkharid()
     UTILS.countTicks(8)
     if canDive() then dive(randomizeDiveCoordinates(3300, 3211, 0, 1)) else abilityWait() end
 
+    API.RandomSleep2(600, 600, 600)
+
     Interact:NPC("Ali Morrisane", "Trade")
 
     local openedDialogue1 = UTILS.SleepUntil(function()
@@ -434,6 +448,7 @@ local function BuyZamorakMage()
     clickRandomTile(3093, 3556, 2)
     UTILS.countTicks(3)
     if canDive() then dive(randomizeDiveCoordinates(3109, 3557, 0, 2)) else abilityWait() end
+    API.RandomSleep2(400, 600, 100)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {2257}, 50)
     UTILS.randomSleep(1000)
 
@@ -462,6 +477,7 @@ local function BuyMagebank()
     UTILS.countTicks(3)
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(3158, 3948, 2)
+    API.RandomSleep2(600, 600, 600)
     Interact:Object("Web", "Slash")
     UTILS.randomSleep(5000)
 
@@ -523,83 +539,6 @@ local function BuyOoglog()
     SHOP_STATUS.Ooglog = false
 end
 
-local function Redsandstone()
-    local IDS_redSandstone = {67969, 67970, 67971, 67972}
-    local redSandstoneDepleted = {67973}
-    LODESTONES.OOGLOG.Teleport()
-    clickRandomTile(2586, 2878, 2)
-    UTILS.countTicks(1)
-    if canSurge() then surge() else abilityWait() end
-    clickRandomTile(2586, 2878, 2)
-    UTILS.countTicks(5)
-    if canSurge() then surge() else abilityWait() end
-    if canDive() then dive(randomizeDiveCoordinates(2586, 2878, 0, 2)) else abilityWait() end
-    API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
-    API.RandomSleep2(600, 600, 600)
-    API.WaitUntilMovingEnds()
-    if UTILS.SleepUntil(checkCues, 150, 'Red Sandstone') then
-    end
-    SHOP_STATUS.Redsandstone = false
-end
-
-local function MenaphosSandstone()
-    local IDS_redSandstone = {67969, 67970, 67971, 67972}
-    local redSandstoneDepleted = {67973}
-    LODESTONES.MENAPHOS.Teleport()
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 24661 },50)
-    API.RandomSleep2(300, 400, 100)
-    if canSurge() then surge() else abilityWait() end
-    API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 24661 },50)
-    UTILS.SleepUntil(function()
-        return API.PInArea(3266, 2, 2729, 2, 0)
-    end, 10, "Arrival at Sophanem  area")
-    API.RandomSleep2(300, 400, 100)
-    if canSurge() then surge() else abilityWait() end
-    clickRandomTile(3304, 2757, 2)
-    API.RandomSleep2(300, 400, 100)
-    if canDive() then dive(randomizeDiveCoordinates(3290, 2729, 0, 2)) else abilityWait() end
-    clickRandomTile(3320, 2761, 2)
-    UTILS.countTicks(10)
-    if canSurge() then surge() else abilityWait() end
-    API.DoAction_Object1(0x39,API.OFF_ACT_GeneralObject_route0,{ 109350 },50)
-    UTILS.countTicks(8)
-    if canDive() then dive(randomizeDiveCoordinates(3321, 2761, 0, 1)) else abilityWait() end
-    API.DoAction_Object1(0x39,API.OFF_ACT_GeneralObject_route0,{ 109350 },50)
-    UTILS.SleepUntil(function()
-        return API.PInArea(3330, 1, 2761, 1, 0)
-    end, 20, "Arrival at Sophanem  area")
-    UTILS.countTicks(1)
-    if canSurge() then surge() else abilityWait() end
-    API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
-    API.RandomSleep2(300, 400, 100)
-    API.WaitUntilMovingEnds()
-    if UTILS.SleepUntil(checkCues, 150, 'Red Sandstone') then
-    end
-    SHOP_STATUS.MenaphosSandstone = false
-end
-
-local function Crystalsandstone()
-    local IDS_redSandstone = {112696, 112697, 112698, 112699,}
-    local redSandstoneDepleted = {112700}
-    LODESTONES.PRIFDDINAS.Teleport()
-    clickRandomTile(2166, 3361, 1)
-    UTILS.countTicks(3)
-    if canSurge() then surge() else abilityWait() end
-    clickRandomTile(2144, 3351, 1)
-    UTILS.countTicks(5)
-    clickRandomTile(2144, 3351, 1)
-    if canDive() then dive(randomizeDiveCoordinates(2142, 3361, 0, 1)) else abilityWait() end
-    UTILS.countTicks(1)
-    if canSurge() then surge() else abilityWait() end
-    clickRandomTile(2144, 3351, 1)
-    API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_redSandstone, 50, true)
-    API.RandomSleep2(600, 600, 600)
-    API.WaitUntilMovingEnds()
-    if UTILS.SleepUntil(checkCues, 150, 'Red Sandstone') then
-    end
-    SHOP_STATUS.Crystalsandstone = false
-end
-
 local function TaverlyHerb()
     LODESTONES.TAVERLEY.Teleport()
     clickRandomTile(2876, 3417, 2)
@@ -638,6 +577,32 @@ local function TaverlyHerb()
     SHOP_STATUS.TaverlyHerb = false
 end
 
+local function ShopHasItemsToBuy(containerID)
+    local shopItems = API.Container_Get_all(containerID)
+    if not shopItems or #shopItems == 0 then
+        print("Shop container is empty or not accessible.")
+        return false
+    end
+
+    print("Inspecting shop items:")
+    for _, shopItem in ipairs(shopItems) do
+        print(string.format("Item ID: %d, Stack: %d", shopItem.item_id, shopItem.item_stack))
+    end
+
+    print("Matching against SHOP_BUY_LIST:")
+    for _, shopItem in ipairs(shopItems) do
+        for _, buyItem in ipairs(SHOP_BUY_LIST) do
+            if shopItem.item_id == buyItem[1] and shopItem.item_stack > 0 then
+                print(string.format("Match found: Item ID %d is available to buy.", shopItem.item_id))
+                return true  -- Found an item to buy
+            end
+        end
+    end
+
+    print("No items left to buy.")
+    return false  -- No items left to buy
+end
+
 local function FortHerbshop()
     LODESTONES.FORT_FORINTHRY.Teleport()
     clickRandomTile(3297, 3568, 1)
@@ -655,21 +620,43 @@ local function FortHerbshop()
         UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
         if API.BankOpen2() then 
             API.KeyboardPress("3", 0, 50)
-            API.RandomSleep2(1200, 1500, 1000)
+            API.RandomSleep2(600, 1200, 100)
         end
     end
 
     while true do
+        -- Interact with the shop NPC
         API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {26134}, 50)
-        API.RandomSleep2(300, 500, 600)
+        API.RandomSleep2(600, 1200, 100)
         UTILS.SleepUntil(isOpen, 10, "Fort Herb shop open")
+        API.RandomSleep2(600, 1200, 100)
+
+        -- Exit loop if the shop is not open
         if not isOpen() then break end
-        BuyFromShopContainer(945)
-        if not Inventory:IsFull() then break end
+
+        -- Keep buying items until the shop is empty
+        while true do
+            BuyFromShopContainer(945)
+
+            -- Check if inventory is full
+            if Inventory:IsFull() then
+                bankSequence()  -- Bank items
+                API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {26134}, 50)  -- Reopen shop
+                API.RandomSleep2(600, 1200, 100)
+                UTILS.SleepUntil(isOpen, 10, "Fort Herb shop open")
+                if not isOpen() then break end  -- Exit if shop is closed
+            end
+
+            -- Exit loop if no more items to buy
+            if not ShopHasItemsToBuy(945) then break end
+        end
+
+        -- Bank after buying out the shop
         bankSequence()
+        break
     end
 
-    bankSequence()
+    --bankSequence()
 
     if SHOP_STATUS.Buybroads then
         API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 30027 },50)
@@ -817,257 +804,6 @@ local function PriffherbShop()
     SHOP_STATUS.PriffherbShop = false
 end
 
-local function isDungeoneeringAtLeast(level)
-    local dung = API.GetSkillByName("DUNGEONEERING")
-    return dung and dung.level and dung.level >= level
-end
-
-local function Mawsandstone()
-    if not isDungeoneeringAtLeast(115) then
-        print("[Mawsandstone] Skipping: Dungeoneering level is below 115.")
-        SHOP_STATUS.Mawsandstone = false
-        return
-    end
-    local IDS_crystalSandstone = {112696, 112697, 112698, 112699}
-    local IDS_Maw = {94273}
-
-    if not API.PInArea(2237, 3, 3400, 3, 0) then
-        LODESTONES.PRIFDDINAS.Teleport()
-        clickRandomTile(2235, 3398, 2)
-        UTILS.countTicks(3)
-        if canSurge() then surge() else abilityWait() end
-        clickRandomTile(2235, 3398, 2)
-        UTILS.countTicks(3)
-        if canSurge() then surge() else abilityWait() end
-        clickRandomTile(2237, 3400, 2)
-        UTILS.SleepUntil(function()
-            return API.PInArea(2237, 3, 3400, 3, 0)
-        end, 30, "Arriving outside Resource dungeon")
-    end
-    API.DoAction_Object1(0x39, API.OFF_ACT_GeneralObject_route0, {94320}, 50)
-    UTILS.SleepUntil(function()
-        return API.PInArea(1374, 3, 4610, 3, 0)
-    end, 30, "Waiting to enter Edimmu Resource dungeon")
-    API.RandomSleep2(1200, 1000, 500)
-    API.DoAction_Object_valid1(0x29, API.OFF_ACT_GeneralObject_route0, IDS_Maw, 50, true)
-    API.RandomSleep2(600, 700, 500)
-    if canSurge() then surge() else abilityWait() end
-    API.DoAction_Object_valid1(0x29, API.OFF_ACT_GeneralObject_route0, IDS_Maw, 50, true)
-    API.RandomSleep2(7000, 6000, 1000) 
-    API.DoAction_Object_valid1(0x3a, API.OFF_ACT_GeneralObject_route0, IDS_crystalSandstone, 50, true)
-    UTILS.SleepUntil(checkCues, 150, 'Crystal Sandstone')
-    SHOP_STATUS.Mawsandstone = false
-end
-
-local badRuneIDs = { [4698]=true,[4695]=true,[4694]=true,[4697]=true,[4699]=true,[4696]=true }
-
-local RuneInterface = {
-    [554]  = {name="Fire Rune", interface=0x22a, slot=3},
-    [555]  = {name="Water Rune", interface=0x22b, slot=1},
-    [556]  = {name="Air Rune", interface=0x22c, slot=0},
-    [557]  = {name="Earth Rune", interface=0x22d, slot=2},
-    [558]  = {name="Mind Rune", interface=0x22e, slot=10},
-    [559]  = {name="Body Rune", interface=0x22f, slot=11},
-    [560]  = {name="Death Rune", interface=0x230, slot=16},
-    [561]  = {name="Nature Rune", interface=0x231, slot=14},
-    [562]  = {name="Chaos Rune", interface=0x232, slot=13},
-    [563]  = {name="Law Rune", interface=0x233, slot=15},
-    [564]  = {name="Cosmic Rune", interface=0x234, slot=12},
-    [565]  = {name="Blood Rune", interface=0x235, slot=18},
-    [566]  = {name="Soul Rune", interface=0x236, slot=19},
-    [9075] = {name="Astral Rune", interface=0x2373, slot=17},
-    [4698] = {name="Mud Rune"}, [4695] = {name="Mist Rune"},
-    [4694] = {name="Steam Rune"}, [4697] = {name="Smoke Rune"},
-    [4699] = {name="Lava Rune"}, [4696] = {name="Dust Rune"}
-}
-
-local nameToID = {}
-for id, info in pairs(RuneInterface) do
-    if info.name then nameToID[info.name] = id end
-end
-
-local function idToName(id)
-    local info = RuneInterface[tonumber(id)]
-    return info and info.name or ("Unknown Rune (" .. tostring(id) .. ")")
-end
-
-local function PickBestRune(slotBestID, slotOtherIDs, usedRunes, badRuneIDs, idToName, excludeRuneName)
-    local candidates = {}
-
-    if slotBestID then
-        table.insert(candidates, { id = tonumber(slotBestID), priority = 1 })
-    end
-    for _, alt in ipairs(slotOtherIDs or {}) do
-        if alt.id then
-            table.insert(candidates, { id = tonumber(alt.id), priority = 2 })
-        end
-    end
-    table.sort(candidates, function(a, b) return a.priority < b.priority end)
-
-    for _, c in ipairs(candidates) do
-        local name = idToName(c.id)
-        if name and not badRuneIDs[c.id] and not usedRunes[name] and name ~= excludeRuneName then
-            usedRunes[name] = true
-            print(string.format("[DEBUG] PickBestRune: Selected %s (ID: %d)", name, c.id))
-            return name
-        end
-    end
-
-    print("[DEBUG] PickBestRune: No valid rune found, all bad, used, or excluded")
-    return "Unknown Rune"
-end
-
-local function GetPersonalCapeRune(capeItemID, capeInterfaceIDs, badRuneIDs, nameToID)
-    if not Inventory:Contains(capeItemID) then
-        print("[DEBUG] RuneCrafting cape not in inventory")
-        return nil
-    end
-
-    API.DoAction_Inventory1(capeItemID, 0, 7, API.OFF_ACT_GeneralInterface_route2)
-    UTILS.SleepUntil(CapeOpen, 5, "RuneCrafting cape interface")
-    API.RandomSleep2(2000, 1500, 100)
-
-    local runeScan = API.ScanForInterfaceTest2Get(false, capeInterfaceIDs)
-    if not runeScan or #runeScan == 0 or not runeScan[1].textids then
-        print("[DEBUG] Scan failed, no rune found")
-        return nil
-    end
-
-    local fullText = type(runeScan[1].textids) == "table"
-        and table.concat(runeScan[1].textids, " ")
-        or tostring(runeScan[1].textids)
-    print("[DEBUG] Raw textids from cape:", fullText)
-
-    if not fullText or fullText == "" then return nil end
-
-    fullText = fullText:gsub("<br>", " "):gsub("%s+", " ")
-    local personalRune = fullText:match("[Aa]re%s+([A-Za-z]+)%s*[Rr]unes")
-
-    if not personalRune then
-        print("[DEBUG] Could not extract rune from cape text")
-        return nil
-    end
-
-    personalRune = personalRune:gsub("%s+", "")
-    local runeKey = personalRune .. " Rune"
-    local runeID = nameToID[runeKey]
-
-    if runeID then
-        if badRuneIDs[runeID] then
-            print("[DEBUG] Cape rune is bad:", runeKey, "(ID:", runeID, ")")
-            return nil
-        else
-            print("[DEBUG] Cape rune accepted:", runeKey, "(ID:", runeID, ")")
-            return runeKey
-        end
-    else
-        print("[DEBUG] Cape rune not in ID table, using raw name:", runeKey)
-        return runeKey
-    end
-end
-
-local function FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickBestRune)
-    local url = "https://runeguide.info/alt1/viswax/api/getVisWaxCombo.php"
-    local response = Http:Get(url)
-    local ok, data = pcall(API.JsonDecode, response and response.body or "{}")
-    if not ok or not data or not data["Wiki"] then
-        print("[DEBUG] Failed to get VisWax combo data or malformed JSON")
-        return nil, "Unknown"
-    end
-
-    local today, used = data["Wiki"], {}
-    local function num(v) return v and tonumber(v) or nil end
-
-    local slot1_bestID = num(today.slot1_best)
-    local slot1_other = today.slot1_other or {}
-    print("[DEBUG] Slot 1 best ID:", slot1_bestID)
-    local slot1 = PickBestRune(slot1_bestID, slot1_other, used, badRuneIDs, idToName, slot3Rune)
-    print("[DEBUG] Slot 1 chosen:", slot1)
-
-    local slot2_sets = {
-        {best = num(today.slot2_1_best), others = today.slot2_1_other or {}},
-        {best = num(today.slot2_2_best), others = today.slot2_2_other or {}},
-        {best = num(today.slot2_3_best), others = today.slot2_3_other or {}}
-    }
-
-    local slot2_bestRune, highestVis = "Unknown Rune", -1
-    for i, s in ipairs(slot2_sets) do
-        if s.best then
-            local runeName = PickBestRune(s.best, s.others, used, badRuneIDs, idToName, slot3Rune)
-            local maxVis = 0
-            for _, alt in ipairs(s.others) do
-                if alt.vis and alt.vis > maxVis then maxVis = alt.vis end
-            end
-            print(string.format("[DEBUG] Slot2_%d candidate: %s (maxVis: %d)", i, runeName, maxVis))
-            if maxVis > highestVis then
-                highestVis = maxVis
-                slot2_bestRune = runeName
-            end
-        end
-    end
-
-    print(string.format("[DEBUG] Final slot 2 chosen: %s (vis: %d)", slot2_bestRune, highestVis))
-    return {slot1, slot2_bestRune}, today.source or "Wiki"
-end
-
-local function InputCombo(combo, nameToID, RuneInterface)
-    print("[DEBUG] Entering Vis Wax combo...")
-    for _, runeName in ipairs(combo) do
-        local runeID, info = nameToID[runeName], RuneInterface[nameToID[runeName]]
-        if info and info.interface then
-            API.DoAction_Interface(0xffffffff, info.interface, 1, 1532, 13, info.slot, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(800, 600, 100)
-        else
-            print("[DEBUG] Unknown interface for rune:", runeName)
-        end
-    end
-    API.DoAction_Interface(0x24, 0xffffffff, 1, 1532, 42, -1, API.OFF_ACT_GeneralInterface_route)
-    print("[DEBUG] Vis Wax combo entered successfully!")
-end
-
-local function Viswax()
-    local capeID, hoodID = 34259, 22332
-    local manualThirdRune = "Air Rune"
-    local capeInterfaceIDs = { {1186, 2, -1, 0}, {1186, 3, -1, 0} }
-
-    if not (Inventory:Contains(capeID) and Inventory:Contains(hoodID)) then
-        print("[DEBUG] Missing cape or hood, stopping.")
-        API.Write_LoopyLoop(false)
-        return
-    end
-
-    print("Cape and hood found, continuing...")
-
-    API.DoAction_Inventory1(hoodID, 0, 3, API.OFF_ACT_GeneralInterface_route)
-    API.RandomSleep2(1200, 800, 100)
-    UTILS.SleepUntil(function() return API.PInArea(3109, 10, 3156, 10, 0) end, 5, "Wizards' Tower")
-    API.RandomSleep2(1200, 800, 100)
-
-    API.DoAction_Object1(0x39, API.OFF_ACT_GeneralObject_route0, {79518}, 50)
-    UTILS.SleepUntil(function() return API.PInArea(1697, 10, 5463, 10, 0) end, 10, "Goldberg machine area")
-
-    local slot3Rune = GetPersonalCapeRune(capeID, capeInterfaceIDs, badRuneIDs, nameToID)
-    if not slot3Rune then
-        print("[DEBUG] No personal rune detected; using manual:", manualThirdRune)
-        slot3Rune = manualThirdRune
-    end
-
-    local combo, source = FetchVisWaxCombo(slot3Rune, badRuneIDs, nameToID, idToName, PickBestRune)
-    table.insert(combo, slot3Rune)
-
-    print("========== FINAL VISWAX COMBO ==========")
-    for i, rune in ipairs(combo) do
-        print(string.format("Slot %d → %s", i, rune))
-    end
-    print("========================================")
-
-    API.DoAction_Object1(0x29, API.OFF_ACT_GeneralObject_route0, {92236}, 50)
-    UTILS.SleepUntil(isOpen, 5, "Goldberg machine input interface")
-    InputCombo(combo, nameToID, RuneInterface)
-
-    SHOP_STATUS.Viswax = false
-end
-
 if API.CacheEnabled then
     print ("Cache is enabled, running the script.")
 else
@@ -1078,9 +814,7 @@ end
 API.Write_LoopyLoop(true)
 while API.Read_LoopyLoop() do
     API.DoRandomEvents()
-    if SHOP_STATUS.Viswax then
-        Viswax()    
-    elseif SHOP_STATUS.Lunar then
+    if SHOP_STATUS.Lunar then
         Lunar()
     elseif SHOP_STATUS.Yannile then
         buyMagesGuild()   
@@ -1098,12 +832,6 @@ while API.Read_LoopyLoop() do
         BuyMagebank() 
     elseif SHOP_STATUS.Ooglog then
         BuyOoglog() 
-    elseif SHOP_STATUS.Redsandstone then
-        Redsandstone()
-    elseif SHOP_STATUS.MenaphosSandstone then
-        MenaphosSandstone()
-    elseif SHOP_STATUS.Crystalsandstone then
-        Crystalsandstone()
     elseif SHOP_STATUS.TaverlyHerb then
         TaverlyHerb()
     elseif SHOP_STATUS.FortHerbshop then
@@ -1114,8 +842,6 @@ while API.Read_LoopyLoop() do
         ClaimpotatoCactus()      
     elseif SHOP_STATUS.PriffherbShop then
         PriffherbShop()
-    elseif SHOP_STATUS.Mawsandstone then
-        Mawsandstone()
     else        
         print("Finished buying from all supported shops")
         API.Write_LoopyLoop(false)
