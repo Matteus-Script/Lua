@@ -99,7 +99,7 @@ local function BuyFromShopContainer(containerID)
         if slotInfo and slotInfo.stack > 0 then
             print(string.format("Buying slot %d (ID %d) %s", slotInfo.slot, itemID, comment or ""))
             API.DoAction_Interface(0xffffffff, 0xffffffff, 7, 1265, 20, slotInfo.slot, API.OFF_ACT_GeneralInterface_route)
-            API.RandomSleep2(100, 200, 300)
+            API.RandomSleep2(100, 150, 125)
 
             -- Check if inventory is full after each purchase
             if Inventory:IsFull() then
@@ -219,6 +219,7 @@ local function Lunar()
     LODESTONES.LUNAR_ISLE.Teleport()
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {4512}, 50)
     UTILS.countTicks(2)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route, {4512}, 50)
     UTILS.countTicks(1)
@@ -231,6 +232,8 @@ local function Lunar()
 
     local opened = UTILS.SleepUntil(isOpen, 10, "Lunar shop open")
     if not opened then return end
+
+    API.RandomSleep2(100, 125, 150)
 
     BuyFromShopContainer(419)
     SHOP_STATUS.Lunar = false
@@ -249,10 +252,13 @@ local function buyMagesGuild()
 
     clickRandomTile(2565, 3091, 2)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
+    API.RandomSleep2(50, 100, 75)
     if canDive() then dive(randomizeDiveCoordinates(2573, 3092, 0, 2)) else abilityWait() end
     API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
     UTILS.countTicks(1)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     API.DoAction_Object1(0x31, API.OFF_ACT_GeneralObject_route0, {1600}, 50)
 
@@ -271,6 +277,8 @@ local function buyMagesGuild()
     local opened = UTILS.SleepUntil(isOpen, 10, "Mage Guild shop open")
     if not opened then return end
 
+    API.RandomSleep2(100, 125, 150)
+
     BuyFromShopContainer(64) 
     SHOP_STATUS.Yannile = false
 end
@@ -278,9 +286,11 @@ end
 
 local function BuySarim()
     LODESTONES.PORT_SARIM.Teleport()
+    API.DoAction_DontResetSelection() 
     if canDive() then dive(randomizeDiveCoordinates(3021, 3227, 0, 1)) else abilityWait() end
     clickRandomTile(3019, 3259, 2)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(3018, 3259, 1)
     local atdoor = UTILS.SleepUntil(function()
@@ -293,6 +303,7 @@ local function BuySarim()
     local opened = UTILS.SleepUntil(isOpen, 10, "Port Sarim shop open")
     if not opened then return end
 
+    UTILS.countTicks(1)
     BuyFromShopContainer(25) 
     SHOP_STATUS.Sarim = false
 end
@@ -315,6 +326,8 @@ local function BuyVoid()
     local opened = UTILS.SleepUntil(isOpen, 10, "Void Knight shop open")
     if not opened then return end
 
+    API.RandomSleep2(100, 125, 150)
+
     BuyFromShopContainer(388) 
     SHOP_STATUS.Void = false
 end
@@ -323,9 +336,12 @@ local function BuyVarrock()
     LODESTONES.VARROCK.Teleport()
     clickRandomTile(3218, 3390, 2)
     UTILS.countTicks(2)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() end
+    API.DoAction_DontResetSelection() 
     if canDive() then dive(randomizeDiveCoordinates(3233, 3390, 0, 2)) end
     UTILS.countTicks(1)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() end
     clickRandomTile(3253, 3397, 1)
 
@@ -341,6 +357,7 @@ local function BuyVarrock()
     local opened = UTILS.SleepUntil(isOpen, 10, "Varrock rune shop open")
     if not opened then return end
 
+    API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(5) 
     SHOP_STATUS.Varrock = false
 end
@@ -379,6 +396,7 @@ local function BuyAlkharid()
     LODESTONES.AL_KHARID.Teleport()
     clickRandomTile(3300, 3211, 2)
     UTILS.countTicks(8)
+    API.DoAction_DontResetSelection() 
     if canDive() then dive(randomizeDiveCoordinates(3300, 3211, 0, 1)) else abilityWait() end
 
     API.RandomSleep2(600, 600, 600)
@@ -408,7 +426,7 @@ local function BuyAlkharid()
 
     local shopOpened1 = UTILS.SleepUntil(isOpen, 10, "Ali Morrisane first shop open")
     if not shopOpened1 then return end
-
+    API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(313)
 
     Interact:NPC("Ali Morrisane", "Trade")
@@ -426,7 +444,7 @@ local function BuyAlkharid()
 
     local shopOpened2 = UTILS.SleepUntil(isOpen, 10, "Ali Morrisane second shop open")
     if not shopOpened2 then return end
-
+    API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(314)
     SHOP_STATUS.AlKharid = false
 end
@@ -444,9 +462,11 @@ local function BuyZamorakMage()
     UTILS.countTicks(2)
     clickRandomTile(3093, 3556, 2)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(3093, 3556, 2)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canDive() then dive(randomizeDiveCoordinates(3109, 3557, 0, 2)) else abilityWait() end
     API.RandomSleep2(400, 600, 100)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route2, {2257}, 50)
@@ -454,7 +474,7 @@ local function BuyZamorakMage()
 
     local shopOpened = UTILS.SleepUntil(isOpen, 10, "Zamorak Mage shop open")
     if not shopOpened then return end
-
+    API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(277) 
     SHOP_STATUS.ZamorakMage = false
 end
@@ -475,6 +495,7 @@ local function BuyMagebank()
     UTILS.randomSleep(1000)
     clickRandomTile(3158, 3948, 2)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(3158, 3948, 2)
     API.RandomSleep2(600, 600, 600)
@@ -483,9 +504,11 @@ local function BuyMagebank()
 
     clickRandomTile(3120, 3957, 2)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(3094, 3958, 1)
     UTILS.countTicks(4)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(3094, 3958, 1)
     UTILS.randomSleep(9000)
@@ -508,6 +531,7 @@ local function BuyMagebank()
     local shopOpened = UTILS.SleepUntil(isOpen, 10, "Magebank shop open")
     if not shopOpened then return end
 
+    API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(131) 
     SHOP_STATUS.Magebank = false
 end
@@ -516,16 +540,20 @@ local function BuyOoglog()
     LODESTONES.OOGLOG.Teleport()
     clickRandomTile(2508, 2837, 2)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(2508, 2837, 2)
     UTILS.randomSleep(3000)
     UTILS.countTicks(3)
     clickRandomTile(2523, 2837, 2)
     UTILS.countTicks(4)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
+    API.DoAction_DontResetSelection() 
     if canDive() then dive(randomizeDiveCoordinates(2560, 2849, 0, 2)) else abilityWait() end
     clickRandomTile(2560, 2849, 2)
     UTILS.randomSleep(3000)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
 
     API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 7056 },50)
@@ -533,7 +561,7 @@ local function BuyOoglog()
 
     local shopOpened = UTILS.SleepUntil(isOpen, 10, "Ooglog shop open")
     if not shopOpened then return end
-
+    API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(534)
 
     SHOP_STATUS.Ooglog = false
@@ -543,6 +571,7 @@ local function TaverlyHerb()
     LODESTONES.TAVERLEY.Teleport()
     clickRandomTile(2876, 3417, 2)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     API.DoAction_Object1(0x5, API.OFF_ACT_GeneralObject_route1, {66666}, 50)
     local bankOpened = UTILS.SleepUntil(API.BankOpen2, 10, "Bank open")
@@ -552,18 +581,21 @@ local function TaverlyHerb()
     end
     clickRandomTile(2922, 3429, 2)
     UTILS.countTicks(2)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(2922, 3429, 2)
     UTILS.countTicks(5)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(2922, 3429, 2)
+    API.DoAction_DontResetSelection() 
     if canDive() then dive(randomizeDiveCoordinates(2921, 3431, 0, 1)) else abilityWait() end
     UTILS.countTicks(1)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route4, {14854}, 50)
 
     local shopOpened = UTILS.SleepUntil(isOpen, 10, "Taverly Herb shop open")
     if not shopOpened then return end
-    
+    API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(635)
 
     if SHOP_STATUS.Flies then
@@ -607,9 +639,11 @@ local function FortHerbshop()
     LODESTONES.FORT_FORINTHRY.Teleport()
     clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(3)
+    API.DoAction_DontResetSelection() 
     if canSurge() then surge() else abilityWait() end
     clickRandomTile(3297, 3568, 1)
     UTILS.countTicks(1)
@@ -636,6 +670,7 @@ local function FortHerbshop()
 
         -- Keep buying items until the shop is empty
         while true do
+            API.RandomSleep2(100, 125, 150)
             BuyFromShopContainer(945)
 
             -- Check if inventory is full
@@ -662,6 +697,7 @@ local function FortHerbshop()
         API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route3,{ 30027 },50)
         API.RandomSleep2(4000, 3000, 600)
         UTILS.SleepUntil(isOpen, 10, "Raptor shop open")
+        API.RandomSleep2(100, 125, 150)
         BuyFromShopContainer(538) 
     end
 
@@ -670,11 +706,13 @@ end
 
 local function BuyBurthorpeBroads()
     LODESTONES.BURTHOPE.Teleport()
+    API.DoAction_DontResetSelection() 
     if canDive() then dive(randomizeDiveCoordinates(2891, 3547, 0, 1)) else abilityWait() end
     API.RandomSleep2(100, 200, 50)
     API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {8480}, 50)
     API.RandomSleep2(300, 500, 600)
     UTILS.SleepUntil(isOpen, 10, "Burthorpe broads shop open")
+    API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(633) 
     API.RandomSleep2(300, 500, 600)
     SHOP_STATUS.Buybroads = false
@@ -742,10 +780,10 @@ local function ClaimpotatoCactus()
         clickRandomTile(2528, 3129, 2)
         UTILS.countTicks(4)
         if canSurge() then surge() else abilityWait() end
-        API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
+        Interact:Object("Fairy ring", "Configure")
         UTILS.countTicks(2)
         if canSurge() then surge() else abilityWait() end
-        API.DoAction_Object1(0x29,API.OFF_ACT_GeneralObject_route2,{ 14112 },50)
+        Interact:Object("Fairy ring", "Configure")
         UTILS.SleepUntil(isOpen, 20, "Fairy ring open")
         if not isOpen() then
             SHOP_STATUS.ClaimpotatoCactus = false
@@ -764,7 +802,7 @@ local function ClaimpotatoCactus()
         clickRandomTile(3234, 3106, 2)
         if canDive() then dive(randomizeDiveCoordinates(3234, 3106, 0, 1)) else abilityWait() end
         API.DoAction_NPC(0x29,API.OFF_ACT_InteractNPC_route2,{ 1152 },50)
-        UTILS.SleepUntil(function() return API.Compare2874Status(12, false) end, 20, "Claim potato cactus dialogue")
+        UTILS.SleepUntil(function() return API.Compare2874Status(12, false) end, 20, "Claim potato cactuue")
         if not isOpen() then
             SHOP_STATUS.ClaimpotatoCactus = false
             return
@@ -791,7 +829,7 @@ local function PriffherbShop()
 
     UTILS.SleepUntil(isOpen, 10, "Priff Herb shop open")
     if not isOpen() then return end
-
+    API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(738) 
 
     API.DoAction_Object1(0x2e, API.OFF_ACT_GeneralObject_route1, {92692}, 50)
