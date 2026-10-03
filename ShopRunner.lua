@@ -22,8 +22,10 @@ local SHOP_STATUS = {
     TaverlyHerb = true,
     FortHerbshop = true,
     ClaimpotatoCactus = true,
-    Buybroads = false, 
-    Flies = false,
+    Buybroads = true,
+    BurthorpeRunes = true,
+    AnachroniaRunesHop = true,
+    Flies = true,
     PriffherbShop = true,
 }
 
@@ -706,16 +708,42 @@ end
 
 local function BuyBurthorpeBroads()
     LODESTONES.BURTHOPE.Teleport()
-    API.DoAction_DontResetSelection() 
-    if canDive() then dive(randomizeDiveCoordinates(2891, 3547, 0, 1)) else abilityWait() end
-    API.RandomSleep2(100, 200, 50)
-    API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {8480}, 50)
+    
+    if SHOP_STATUS.Buybroads then
+        API.DoAction_DontResetSelection() 
+        if canDive() then dive(randomizeDiveCoordinates(2891, 3547, 0, 1)) else abilityWait() end
+         API.RandomSleep2(100, 200, 50)
+        API.DoAction_NPC(0x29, API.OFF_ACT_InteractNPC_route3, {8480}, 50)
+        API.RandomSleep2(300, 500, 600)
+        UTILS.SleepUntil(isOpen, 10, "Burthorpe broads shop open")
+        API.RandomSleep2(100, 125, 150)
+        BuyFromShopContainer(633)
+        API.RandomSleep2(300, 500, 600)
+        SHOP_STATUS.Buybroads = false
+    end
+
+    if SHOP_STATUS.BurthorpeRunes then
+        Interact:NPC("Apprentice Clara", "Trade")
+        API.RandomSleep2(300, 500, 600)
+        UTILS.SleepUntil(isOpen, 20, "Burthorpe runes shop open")
+        API.RandomSleep2(100, 125, 150)
+        BuyFromShopContainer(641)
+        API.RandomSleep2(300, 500, 600)
+        SHOP_STATUS.BurthorpeRunes = false
+    end
+end
+
+local function BuyAnachroniaRuneShop()
+    LODESTONES.ANACHRONIA.Teleport()
+    Interact:NPC("Rune store assistant", "Trade")
     API.RandomSleep2(300, 500, 600)
-    UTILS.SleepUntil(isOpen, 10, "Burthorpe broads shop open")
+    UTILS.SleepUntil(isOpen, 20, "Anachronia runes shop open")
+    if not isOpen() then return end
+
     API.RandomSleep2(100, 125, 150)
-    BuyFromShopContainer(633) 
+    BuyFromShopContainer(864)
     API.RandomSleep2(300, 500, 600)
-    SHOP_STATUS.Buybroads = false
+    SHOP_STATUS.AnachroniaRunesHop = false
 end
 
 local desert_subreqs = {
@@ -874,8 +902,10 @@ while API.Read_LoopyLoop() do
         TaverlyHerb()
     elseif SHOP_STATUS.FortHerbshop then
         FortHerbshop()
-    elseif SHOP_STATUS.Buybroads then
+    elseif SHOP_STATUS.Buybroads or SHOP_STATUS.BurthorpeRunes then
         BuyBurthorpeBroads()
+    elseif SHOP_STATUS.AnachroniaRunesHop then
+        BuyAnachroniaRuneShop()
     elseif SHOP_STATUS.ClaimpotatoCactus then
         ClaimpotatoCactus()      
     elseif SHOP_STATUS.PriffherbShop then
