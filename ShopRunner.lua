@@ -24,7 +24,7 @@ local SHOP_STATUS = {
     ClaimpotatoCactus = true,
     Buybroads = true,
     BurthorpeRunes = true,
-    AnachroniaRunesHop = true,
+    AnachroniaRuneShop = true,
     Flies = true,
     PriffherbShop = true,
 }
@@ -743,7 +743,7 @@ local function BuyAnachroniaRuneShop()
     API.RandomSleep2(100, 125, 150)
     BuyFromShopContainer(864)
     API.RandomSleep2(300, 500, 600)
-    SHOP_STATUS.AnachroniaRunesHop = false
+    SHOP_STATUS.AnachroniaRuneShop = false
 end
 
 local desert_subreqs = {
