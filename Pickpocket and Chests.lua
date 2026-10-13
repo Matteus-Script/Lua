@@ -1,3 +1,10 @@
+-- Title: Pickpocket and Chests
+-- Author: <Matteus>
+-- Description: <A configurable Thieving script with support for both NPC pickpocketing and nearby lock-pickable chests. Select an available NPC target or enable chest mode.>
+-- Version: <1.0>
+-- Category: Thieving
+-- Date : 2026.10.13
+
 local API = require("api")
 local UTILS = require("utils")
 
