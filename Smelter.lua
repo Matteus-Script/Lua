@@ -2,8 +2,8 @@
 # Script Name:   Smelter
 # Description:   Smelts bars and deposits them in the furnace
 # Author:        Matteus
-# Version:       1.0
-# Date:          2025.12.17
+# Version:       1.2
+# Date:          2024.08.21
 --]]
 
 local API = require('api')
@@ -15,6 +15,9 @@ API.SetMaxIdleTime(10)
 local function isOpen()
     return API.Compare2874Status(85, false)
 end
+
+local scriptRunning = false
+local stopRequested = false
 
 local trackedSkill = "SMITHING"
 local startXp = API.GetSkillXP(trackedSkill)
@@ -31,6 +34,8 @@ local function checkXpIncrease()
 
     if os.difftime(os.time(), lastXpTime) >= maxIdleTime then
         print("No XP increase detected in " .. trackedSkill .. " for " .. maxIdleTime .. " seconds. Stopping script.")
+        stopRequested = true
+        scriptRunning = false
         API.Write_LoopyLoop(false)
     end
 end
@@ -58,27 +63,84 @@ local BAR_SELECTION = {
     end}
 }
 
-local selectedBar = nil 
+local BAR_OPTIONS = {
+    "Bronze", "Iron", "Steel", "Mithril", "Adamant", "Rune", "Orikalkum",
+    "Necronium", "Bane", "ElderRune", "Primal", "Silver", "Gold", "Cannonball"
+}
 
-local function getOptionSelection(option_string, tbl)
-    local options = {}
-    for _, bar in ipairs({"Bronze", "Iron", "Steel", "Mithril", "Adamant", "Rune", "Orikalkum", "Necronium", "Bane", "ElderRune", "Primal", "Silver", "Gold", "Cannonball"}) do
-        if tbl[bar] then
-            table.insert(options, bar)
-        end
+local settings = {
+    selectedBar = "Bronze",
+    useElvenRitualShard = true,
+    useChronicleAttraction = false,
+    useSuperheatForm = true,
+}
+
+local function getConfigPath()
+    local scriptPath = debug.getinfo(1, "S").source
+    if scriptPath and scriptPath:sub(1, 1) == "@" then
+        scriptPath = scriptPath:sub(2)
     end
 
-    local selection = API.ScriptDialogWindow2(option_string, options, "Start", "Close").Name
-    return selection
+    local scriptDir = scriptPath and scriptPath:match("^(.*)[/\\][^/\\]+$") or "."
+    return scriptDir .. "\\Smelter.config.json"
 end
 
-selectedBar = getOptionSelection("Select Bar Type", BAR_SELECTION)
-if not BAR_SELECTION[selectedBar] then
-    print("Invalid bar selection. Exiting script.")
-    return
+local function saveSettings()
+    local ok, encoded = pcall(API.JsonEncode, settings)
+    if not ok or not encoded then
+        print("[Smelter] Failed to encode settings")
+        return false
+    end
+
+    local configPath = getConfigPath()
+    local file, openError = io.open(configPath, "w")
+    if not file then
+        print("[Smelter] Failed to write config: " .. tostring(openError or configPath))
+        return false
+    end
+
+    local writeOk, writeError = file:write(encoded)
+    local closeOk, closeError = file:close()
+    if not writeOk or closeOk == nil then
+        print("[Smelter] Failed to save config: " .. tostring(writeError or closeError))
+        return false
+    end
+    return true
 end
 
-print("Selected Bar: " .. selectedBar)
+local function loadSettings()
+    local file = io.open(getConfigPath(), "r")
+    if not file then
+        return false
+    end
+
+    local content = file:read("*a")
+    file:close()
+
+    local ok, data = pcall(API.JsonDecode, content)
+    if not ok or type(data) ~= "table" then
+        print("[Smelter] Failed to decode config")
+        return false
+    end
+
+    if type(data.selectedBar) == "string" and BAR_SELECTION[data.selectedBar] then
+        settings.selectedBar = data.selectedBar
+    end
+    if type(data.useElvenRitualShard) == "boolean" then
+        settings.useElvenRitualShard = data.useElvenRitualShard
+    end
+    if type(data.useChronicleAttraction) == "boolean" then
+        settings.useChronicleAttraction = data.useChronicleAttraction
+    end
+    if type(data.useSuperheatForm) == "boolean" then
+        settings.useSuperheatForm = data.useSuperheatForm
+    end
+    return true
+end
+
+loadSettings()
+local selectedBar = settings.selectedBar
+print("Selected bar: " .. selectedBar)
 
 local firstRun = true
 
@@ -91,56 +153,75 @@ local function hasElvenRitualShard()
     return Inventory:InvItemcount(43358) > 0
 end
 
-local function hasRequiredItem()
-    return hasElvenRitualShard() or API.GetEquipSlot(5).itemid1 == 50806
-end
+local chronicleAttractionFallbackOnly = false
+local superheatFormFallbackOnly = false
 
 local function isChronicleAttractionOnBar()
+    if chronicleAttractionFallbackOnly then
+        return false
+    end
     local chronicle = API.GetABs_name("Chronicle Attraction", true)
-    return chronicle ~= nil
+    if chronicle == nil or chronicle.id == 0 then
+        chronicleAttractionFallbackOnly = true
+        return false
+    end
+    return true
 end
 
 local function isSuperheatFormOnBar()
+    if superheatFormFallbackOnly then
+        return false
+    end
     local superheat = API.GetABs_name("Superheat Form", true)
-    return superheat ~= nil
+    if superheat == nil or superheat.id == 0 then
+        superheatFormFallbackOnly = true
+        return false
+    end
+    return true
 end
 
 local function checkBuffs()
-    local hasShard = hasElvenRitualShard()
-    local hasFurnaceCore = API.GetEquipSlot(5).itemid1 == 50806
-
-    if not (hasShard and hasFurnaceCore) then
-        return
-    end
-
-    local buffsToCheck = {
-        --[[ {id = 26053, name = "Chronicle Attraction", action = function()
-            if isChronicleAttractionOnBar() then
-                print("Activating Chronicle Attraction from ability bar.")
-                local success = API.DoAction_Ability("Chronicle Attraction", 1, API.OFF_ACT_GeneralInterface_route)
-                if not success then
-                    print("Chronicle Attraction activation failed on ability bar. Falling back to interface.")
+    local buffsToCheck = {}
+    if settings.useChronicleAttraction then
+        buffsToCheck[#buffsToCheck + 1] = {
+            id = 26053,
+            name = "Chronicle Attraction",
+            action = function()
+                if isChronicleAttractionOnBar() then
+                    print("Activating Chronicle Attraction from ability bar.")
+                    local success = API.DoAction_Ability("Chronicle Attraction", 1, API.OFF_ACT_GeneralInterface_route)
+                    if not success then
+                        chronicleAttractionFallbackOnly = true
+                        print("Chronicle Attraction activation failed on ability bar. Falling back to interface.")
+                        performInterfaceAction(API.DoAction_Interface, 0xffffffff, 0xffffffff, 1, 1458, 40, 30, API.OFF_ACT_GeneralInterface_route)
+                    end
+                else
+                    print("Chronicle Attraction not found on ability bar. Falling back to interface.")
                     performInterfaceAction(API.DoAction_Interface, 0xffffffff, 0xffffffff, 1, 1458, 40, 30, API.OFF_ACT_GeneralInterface_route)
                 end
-            else
-                print("Chronicle Attraction not found on ability bar. Falling back to interface.")
-                performInterfaceAction(API.DoAction_Interface, 0xffffffff, 0xffffffff, 1, 1458, 40, 30, API.OFF_ACT_GeneralInterface_route)
             end
-        end}, ]]
-        {id = 26055, name = "Superheat Form", action = function()
-            if isSuperheatFormOnBar() then
-                print("Activating Superheat Form from ability bar.")
-                local success = API.DoAction_Ability("Superheat Form", 1, API.OFF_ACT_GeneralInterface_route)
-                if not success then
-                    print("Superheat Form activation failed on ability bar. Falling back to interface.")
+        }
+    end
+    if settings.useSuperheatForm then
+        buffsToCheck[#buffsToCheck + 1] = {
+            id = 26055,
+            name = "Superheat Form",
+            action = function()
+                if isSuperheatFormOnBar() then
+                    print("Activating Superheat Form from ability bar.")
+                    local success = API.DoAction_Ability("Superheat Form", 1, API.OFF_ACT_GeneralInterface_route)
+                    if not success then
+                        superheatFormFallbackOnly = true
+                        print("Superheat Form activation failed on ability bar. Falling back to interface.")
+                        performInterfaceAction(API.DoAction_Interface, 0xffffffff, 0xffffffff, 1, 1458, 40, 34, API.OFF_ACT_GeneralInterface_route)
+                    end
+                else
+                    print("Superheat Form not found on ability bar. Falling back to interface.")
                     performInterfaceAction(API.DoAction_Interface, 0xffffffff, 0xffffffff, 1, 1458, 40, 34, API.OFF_ACT_GeneralInterface_route)
                 end
-            else
-                print("Superheat Form not found on ability bar. Falling back to interface.")
-                performInterfaceAction(API.DoAction_Interface, 0xffffffff, 0xffffffff, 1, 1458, 40, 34, API.OFF_ACT_GeneralInterface_route)
             end
-        end}
-    }
+        }
+    end
 
     for _, buff in ipairs(buffsToCheck) do
         local buffStatus = API.Buffbar_GetIDstatus(buff.id)
@@ -283,11 +364,10 @@ local function smeltMaterials()
     local maxRetries = 3
     local retries = 0
     while retries < maxRetries do
-        Interact:Object("Furnace", "Smelt", 20)
-        API.RandomSleep2(1200, 1000, 500)
+        Interact:Object("Furnace", "Smelt")
 
-        if isOpen() then
-            break
+        if UTILS.SleepUntil(isOpen, 10, "Waiting for furnace interface to open") then
+        break
         end
 
         retries = retries + 1
@@ -296,17 +376,21 @@ local function smeltMaterials()
 
     if not isOpen() then
         print("Furnace interface failed to open after " .. maxRetries .. " attempts. Stopping script.")
+        stopRequested = true
+        scriptRunning = false
         API.Write_LoopyLoop(false)
         return
     end
 
     if not hasSufficientOres(selectedBar) then
         print("Not enough ores in furnace to smelt " .. (selectedBar or "Unknown") .. ". Stopping script.")
+        stopRequested = true
+        scriptRunning = false
         API.Write_LoopyLoop(false)
         return
     end
 
-    if UTILS.SleepUntil(isOpen, 10, "Waiting for smithing interface to open") then
+    if isOpen() then
         if firstRun then
             local barConfig = BAR_SELECTION[selectedBar]
             if barConfig then
@@ -359,6 +443,10 @@ local function isElvenRitualShardOnBar()
 end
 
 local function useElvenRitualShard()
+    if not settings.useElvenRitualShard then
+        return
+    end
+
     if not hasElvenRitualShard() then 
         return 
     end
@@ -382,20 +470,125 @@ local function useElvenRitualShard()
     end
 end
 
+local selectedBarIndex = 0
+for index, barName in ipairs(BAR_OPTIONS) do
+    if barName == selectedBar then
+        selectedBarIndex = index - 1
+        break
+    end
+end
+
+local function drawGUI()
+    ImGui.SetNextWindowSize(360, 200, ImGuiCond.Always)
+    if ImGui.Begin("Smelter") then
+        local status = stopRequested and "Stopped" or (scriptRunning and "Running" or "Paused")
+        ImGui.Text("Status: " .. status)
+        ImGui.Spacing()
+
+        if ImGui.Button(scriptRunning and "Stop" or "Start", 90, 28) and not stopRequested then
+            if scriptRunning then
+                stopRequested = true
+                scriptRunning = false
+                API.Write_LoopyLoop(false)
+            else
+                local startBar = BAR_OPTIONS[selectedBarIndex + 1]
+                if not startBar then
+                    print("[Smelter] Invalid bar selection; cannot start")
+                else
+                    selectedBar = startBar
+                    settings.selectedBar = startBar
+                    firstRun = true
+                    if not saveSettings() then
+                        print("[Smelter] Failed to save selected bar on start")
+                    end
+                    print("Starting smelting: " .. selectedBar)
+                    scriptRunning = true
+                end
+                startXp = API.GetSkillXP(trackedSkill)
+                lastXpTime = os.time()
+            end
+        end
+        ImGui.SameLine()
+        if ImGui.Button("Pause", 90, 28) and not stopRequested then
+            scriptRunning = false
+        end
+
+        ImGui.Spacing()
+        local changed, newIndex = ImGui.Combo("Smelt", selectedBarIndex, BAR_OPTIONS)
+        if changed then
+            local newBar = type(newIndex) == "number" and BAR_OPTIONS[newIndex + 1] or nil
+            if newBar then
+                selectedBarIndex = newIndex
+                selectedBar = newBar
+                settings.selectedBar = newBar
+                firstRun = true
+                print("[Smelter] Selected bar changed to: " .. newBar)
+                if not saveSettings() then
+                    print("[Smelter] Failed to save selected bar")
+                end
+            else
+                print("[Smelter] Bar selection returned invalid index: " .. tostring(newIndex))
+            end
+        end
+        ImGui.Text("Selected bar: " .. selectedBar)
+
+        local shardChanged, useShard = ImGui.Checkbox("Use Elven Ritual Shard", settings.useElvenRitualShard)
+        if shardChanged then
+            settings.useElvenRitualShard = useShard
+            print("[Smelter] Elven Ritual Shard " .. (useShard and "enabled" or "disabled"))
+            if not saveSettings() then
+                print("[Smelter] Failed to save Elven Ritual Shard setting")
+            end
+        end
+
+        local chronicleChanged, useChronicle = ImGui.Checkbox("Use Chronicle Attraction", settings.useChronicleAttraction)
+        if chronicleChanged then
+            settings.useChronicleAttraction = useChronicle
+            print("[Smelter] Chronicle Attraction " .. (useChronicle and "enabled" or "disabled"))
+            if not saveSettings() then
+                print("[Smelter] Failed to save Chronicle Attraction setting")
+            end
+        end
+
+        local superheatChanged, useSuperheat = ImGui.Checkbox("Use Superheat Form", settings.useSuperheatForm)
+        if superheatChanged then
+            settings.useSuperheatForm = useSuperheat
+            print("[Smelter] Superheat Form " .. (useSuperheat and "enabled" or "disabled"))
+            if not saveSettings() then
+                print("[Smelter] Failed to save Superheat Form setting")
+            end
+        end
+    end
+    ImGui.End()
+end
+
+if type(ClearRender) == "function" then
+    ClearRender()
+end
+if type(DrawImGui) == "function" then
+    DrawImGui(drawGUI)
+end
+
 while API.Read_LoopyLoop() do
-    if not (API.isProcessing()) then
-        smeltMaterials() 
+    if scriptRunning then
+        if not API.isProcessing() then
+            smeltMaterials()
+        end
+        if Inventory:IsFull() then
+            Interact:Object("Furnace", "Deposit-all (into metal bank)")
+            print("Depositing bars into furnace.")
+            API.RandomSleep2(600, 500, 100)
+        end
+        checkXpIncrease()
+        useElvenRitualShard()
+        checkBuffs()
+        API.DoRandomEvents()
     end
-    if Inventory:IsFull() then
-        Interact:Object("Furnace", "Deposit-all (into metal bank)")
-        print("Depositing bars into furnace.")
-        API.RandomSleep2(600, 500, 100)   
+    if scriptRunning then
+        API.RandomSleep2(600, 700, 100)
+    else
+        API.RandomSleep2(10, 0, 0)
     end
-    checkXpIncrease()
-    useElvenRitualShard()
-    checkBuffs() 
-    API.DoRandomEvents()
-    API.RandomSleep2(600, 700, 100)
 end
 
 checkFurnaceContents()
