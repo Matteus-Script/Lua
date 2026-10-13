@@ -20,11 +20,12 @@ local maintainCrystalMask = false
 local maintainLightForm = false
 local maintainFamiliar = false
 local lastPrayerRestoreAttempt = nil
-local familiarOptions = { "Holy scarab", "Magpie", "Abyssal lurker" }
+local familiarOptions = { "Holy scarab", "Magpie", "Abyssal lurker", "Bunyip" }
 local familiarPouches = {
     ["Holy scarab"] = { id = 52825, name = "Holy scarab pouch" },
     Magpie = { id = 12041, name = "Magpie pouch" },
-    ["Abyssal lurker"] = { id = 12037, name = "Abyssal lurker pouch" }
+    ["Abyssal lurker"] = { id = 12037, name = "Abyssal lurker pouch" },
+    Bunyip = { id = 12029, name = "Bunyip pouch" }
 }
 local selectedFamiliarIndex = 0
 local selectedFamiliar = familiarOptions[selectedFamiliarIndex + 1]
