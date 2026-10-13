@@ -6,7 +6,6 @@
 -- Date : 2026.10.13
 
 local API = require("api")
-local UTILS = require("utils")
 
 API.SetDrawTrackedSkills(true)
 API.SetMaxIdleTime(10)
@@ -20,8 +19,6 @@ local IDS = {
 local maintainCrystalMask = false
 local maintainLightForm = false
 local maintainFamiliar = false
-local crystalMaskMissingFromBar = false
-local lightFormMissingFromBar = false
 local lastPrayerRestoreAttempt = nil
 local familiarOptions = { "Holy scarab", "Magpie", "Abyssal lurker" }
 local familiarPouches = {
@@ -39,27 +36,13 @@ local function isElvenRitualShardOnBar()
 end
 
 local function isLightFormOnBar()
-    if lightFormMissingFromBar then
-        return false
-    end
     local lightForm = API.GetABs_name("Light Form", true)
-    if lightForm == nil then
-        lightFormMissingFromBar = true
-        return false
-    end
-    return true
+    return lightForm ~= nil and lightForm.id ~= 0
 end
 
 local function isCrystalMaskOnBar()
-    if crystalMaskMissingFromBar then
-        return false
-    end
     local crystalMask = API.GetABs_name("Crystal Mask", true)
-    if crystalMask == nil then
-        crystalMaskMissingFromBar = true
-        return false
-    end
-    return true
+    return crystalMask ~= nil and crystalMask.id ~= 0
 end
 
 local function drinkRestorePotion()
