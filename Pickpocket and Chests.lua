@@ -19,7 +19,10 @@ local IDS = {
 local maintainCrystalMask = false
 local maintainLightForm = false
 local maintainFamiliar = false
+local crystalMaskFallbackOnly = false
+local lightFormFallbackOnly = false
 local lastPrayerRestoreAttempt = nil
+local missingFamiliarPouchId = nil
 local familiarOptions = { "Holy scarab", "Magpie", "Abyssal lurker", "Bunyip" }
 local familiarPouches = {
     ["Holy scarab"] = { id = 52825, name = "Holy scarab pouch" },
@@ -37,11 +40,17 @@ local function isElvenRitualShardOnBar()
 end
 
 local function isLightFormOnBar()
+    if lightFormFallbackOnly then
+        return false
+    end
     local lightForm = API.GetABs_name("Light Form", true)
     return lightForm ~= nil and lightForm.id ~= 0
 end
 
 local function isCrystalMaskOnBar()
+    if crystalMaskFallbackOnly then
+        return false
+    end
     local crystalMask = API.GetABs_name("Crystal Mask", true)
     return crystalMask ~= nil and crystalMask.id ~= 0
 end
@@ -88,9 +97,13 @@ local function checkAndSummonFamiliar()
     end
 
     if Inventory:InvItemcount(pouch.id) == 0 then
-        print("No " .. pouch.name .. " in inventory.")
+        if missingFamiliarPouchId ~= pouch.id then
+            print("No " .. pouch.name .. " in inventory.")
+            missingFamiliarPouchId = pouch.id
+        end
         return
     end
+    missingFamiliarPouchId = nil
 
     local summoningPoints = API.GetSummoningPoints_()
     if summoningPoints < 100 then
@@ -154,10 +167,12 @@ local function healthCheck()
             print("Activating Crystal Mask from ability bar.")
             local success = API.DoAction_Ability("Crystal Mask", 1, API.OFF_ACT_GeneralInterface_route)
             if not success then
+                crystalMaskFallbackOnly = true
                 print("Crystal Mask activation failed on ability bar. Falling back to interface.")
                 API.DoAction_Interface(0xffffffff, 0xffffffff, 1, 1461, 1, 182, API.OFF_ACT_GeneralInterface_route)
             end
         else
+            crystalMaskFallbackOnly = true
             print("Crystal Mask not found on ability bar. Falling back to interface.")
             API.DoAction_Interface(0xffffffff, 0xffffffff, 1, 1461, 1, 182, API.OFF_ACT_GeneralInterface_route)
         end
@@ -169,10 +184,12 @@ local function healthCheck()
             print("Activating Light Form from ability bar.")
             local success = API.DoAction_Ability("Light Form", 1, API.OFF_ACT_GeneralInterface_route)
             if not success then
+                lightFormFallbackOnly = true
                 print("Light Form activation failed on ability bar. Falling back to interface.")
                 API.DoAction_Interface(0xffffffff, 0xffffffff, 1, 1458, 40, 23, API.OFF_ACT_GeneralInterface_route)
             end
         else
+            lightFormFallbackOnly = true
             print("Light Form not found on ability bar. Falling back to interface.")
             API.DoAction_Interface(0xffffffff, 0xffffffff, 1, 1458, 40, 23, API.OFF_ACT_GeneralInterface_route)
         end
