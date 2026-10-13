@@ -35,6 +35,7 @@ local function TeleportAmlodd()
         API.Write_LoopyLoop(false)
         return
     end
+    API.RandomSleep2(200, 300, 100)
     API.KeyboardPress32(0x33, 0)
     UTILS.SleepUntil(function() return API.PInArea(2155, 5, 3383, 5, 1) end, 10, "Arrived at Amlodd")
     currentState = states.CLICK_OBELISK
@@ -47,6 +48,7 @@ local function ClickObelisk()
         print("Obelisk interface did not open. Retrying.")
 
         Interact:Object("Obelisk", "Infuse-pouch", WPOINT.new(2139, 3374,0))
+        API.RandomSleep2(200, 300, 100)
 
         if not UTILS.SleepUntil(isOpen, 10, "Obelisk Interface to open on retry") then
             print("Obelisk interface failed to open again. Stopping script.")
@@ -66,12 +68,14 @@ end
 local function TeleportIthell()
     API.DoAction_Inventory1(39784, 0, 1, API.OFF_ACT_GeneralInterface_route)
 
+    API.RandomSleep2(200, 300, 100)
     
     if not UTILS.SleepUntil(isOpen, 5, "Seed Teleport Interface") then
         print("Teleport interface did not open after using teleport seed.")
         API.Write_LoopyLoop(false)
         return
     end
+    API.RandomSleep2(200, 300, 100)
 
     API.KeyboardPress32(0x38, 0)
     UTILS.SleepUntil(function() return API.PInArea(2155, 5, 3339, 5, 1) end, 10, "Arrived at Ithell")
@@ -98,7 +102,7 @@ end
 
 local function Bank()
     Interact:Object("Bank chest", "Load Last Preset from", WPOINT.new(2153, 3341,0))
-    
+      
     if makingBindingContracts then
         if not UTILS.SleepUntil(function() return Inventory:IsFull() end, 10, "Inventory full") then
             print("Timeout waiting for inventory to fill")
